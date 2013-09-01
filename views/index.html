@@ -1,0 +1,123 @@
+<html>
+
+	<head>
+		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/normalize.css"></link>
+		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/foundation.min.css"></link>
+		<script src="http://noise.fmdj.fr/assets/kinetic.min.js"></script>
+		<script src="http://noise.fmdj.fr/assets/angular.min.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/jquery.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/custom.modernizr.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.forms.js"></script>
+
+		<link rel="stylesheet" href="/css/main.css"></link>
+	</head>
+
+	<body ng-app ng-controller="instrumentController">
+
+		<div class="row">
+			<div class="large-2 columns">
+				&nbsp;
+			</div>
+			<div class="large-8 columns">
+				<div class="row">
+					<div class="large-6 columns">
+						<div class="row">
+							<div class="large-4 columns">
+								<select ng-model='node_type'>
+									<option value="oscillator">Oscillator</option>
+									<option value="gain">Gain</option>
+									<option value="output">Output</option>
+								</select>
+							</div>
+							<div class="large-4 columns">
+								<button class="tiny" ng-click="addNode(node_type)">Add node!</button>
+							</div>
+							<div class="large-4 columns">
+								<button class="tiny success" ng-click="bleep()">Bleep!</button>
+							</div>
+						</div>
+					</div>
+					<div class="large-6 columns">
+						<div class="large-3 columns">
+							<button class="tiny" ng-click="savePreset(preset_name)">Save:</button>							
+						</div>
+						<div class="large-3 columns">
+							<input type="text" ng-model="preset_name" style="height:25px"></input>
+						</div>
+						<div class="large-3 columns">
+							<button class="tiny success" ng-click="loadPreset(preset_to_load)">Load:</button>
+						</div>
+						<div class="large-3 columns">
+							<select ng-model="preset_to_load">
+								<option ng-repeat="(preset, unused) in presets" value="{{preset}}">{{preset}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="large-12 columns">
+						<span class="info">{{infoText}}</span>&nbsp;
+					</div>
+				</div>
+				<div class="row">
+					<div class="large-12 columns">
+						<div id="instrument"></div>
+					</div>
+				</div>
+				
+				<div class="row" style="margin-top:15px">
+					<div class="large-12 columns">
+						<textarea ng-model="score"></textarea>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="large-12 columns">
+						<button ng-click="play(score)">Play!</button>
+					</div>
+				</div>
+
+			</div>
+			<div class="large-2 columns">
+				&nbsp;
+			</div>
+		</div>
+
+		
+
+		<script type="text/javascript">
+
+			var freqs   = {
+				'C'		: 16.35,
+				'C#'	: 17.32,
+				'D'		: 18.35,
+				'D#'	: 19.45,
+				'E'		: 20.60,
+				'F'		: 21.83,
+				'F#'	: 23.12,
+				'G'		: 24.50,
+				'G#'	: 25.96,
+				'A'		: 27.50,
+				'A#'	: 29.14,
+				'B'		: 30.87
+			};
+
+			var getFreq = function(note, octave)
+			{
+				if(!octave)octave=4;
+
+				if(!freqs[note])return 0;
+
+				return freqs[note]*Math.pow(2, octave);
+			}
+
+		</script>
+
+		<script src="/js/soundNode.js"></script>
+		<script src="/js/nodeView.js"></script>
+		<script src="/js/instrumentController.js"></script>
+
+	</body>
+
+</html>
