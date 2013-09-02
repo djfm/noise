@@ -18,12 +18,35 @@ var soundNode = function(options)
 			node.type		= 0;
 			return node;
 		}
+		else if(this.node_type == 'gain')
+		{
+			var node = audioContext.createGain();
+			node.gain.value = 0.5;
+			return node;
+		}
+		else if(this.node_type == 'delay')
+		{
+			var node = audioContext.createDelay();
+			node.delayTime.value = 0.25;
+			return node;
+		}
+		else if(this.node_type == 'envelope')
+		{
+			var gain = audioContext.createGain();
+			gain.gain.value = 0;
+			var now = audioContext.currentTime;
+			gain.gain.setValueAtTime(gain.gain.value, now);
+			gain.gain.linearRampToValueAtTime(1   , now + 0.1);
+			gain.gain.linearRampToValueAtTime(0   , now + 0.5);
+			return gain;
+		}
 		else if(this.node_type == 'output')
 		{
-			var g = audioContext.createGain();
-			g.gain.value = 0.1;
-			g.connect(audioContext.destination);
-			return g;
+
+			var gain = audioContext.createGain();
+			gain.gain.value = 0.4;
+			gain.connect(audioContext.destination);
+			return gain;
 		}
 		else
 		{

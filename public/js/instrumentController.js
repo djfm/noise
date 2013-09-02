@@ -119,27 +119,36 @@ var instrumentController = function($scope)
 			}
 		};
 
-		this.makeAndConnect = function(node)
+		this.makeAndConnect = function(i, cache)
 		{
-			var impl = node.getNode();
+			
+			// Only generate implementations once per node per instrument
+			var impl 		= cache.nodes[i] || state.nodes[i].getNode();
+			cache.nodes[i] 	= impl;
 
-			for(var o in node.outputs)
+			for(var o in state.nodes[i].outputs)
 			{
-				impl.connect(this.makeAndConnect(state.nodes[o]));
+				if(!cache.connections[[i,o]])
+				{
+					cache.connections[[i,o]] = true;
+					impl.connect(this.makeAndConnect(o, cache));
+				}
 			}
 
 			return impl;
+			
 		};
 
 		this.makeInstrument = function()
 		{
 			var oscillators = [];
+			var cache  		= {nodes: {}, connections: {}};
 
 			for(var i in state.nodes)
 			{
 				if(state.nodes[i].node_type == 'oscillator')
 				{
-					oscillators.push(this.makeAndConnect(state.nodes[i]));
+					oscillators.push(this.makeAndConnect(i, cache));
 				}
 			}
 
@@ -275,6 +284,10 @@ var instrumentController = function($scope)
 						{
 							notes.push(m[1][i]);
 						}
+					}
+					else if(what == " ")
+					{
+						// Silence is sexy
 					}
 					else
 					{

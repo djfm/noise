@@ -21,6 +21,14 @@ var nodeView = function(options)
   {
     this.backgroundColor = 'yellow';
   }
+  else if(options.model.node_type == 'delay')
+  {
+    this.backgroundColor = 'purple';
+  }
+  else if(options.model.node_type == 'envelope')
+  {
+    this.backgroundColor = 'orange';
+  }
 
   this.inputs  = {};
   this.outputs = {};
@@ -143,7 +151,7 @@ var nodeView = function(options)
       }
     }
   }
-  
+
   group.on('dragstart dragmove', function(){
     var io = [my.inputs, my.outputs];
     for(var i in io)
