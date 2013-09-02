@@ -169,6 +169,28 @@ var nodeView = function(options)
     }
   });
 
+  group.on('click', function(){
+    options.controller.focusNode(my);
+  });
+
+  this.focus = function()
+  {
+    this.previousFill = rect.getFill();
+    rect.setFill("white");
+    options.layer.draw();
+  };
+
+  this.unFocus = function()
+  {
+    rect.setFill(this.previousFill);
+    options.layer.draw();
+  };
+
+  this.getControls = function()
+  {
+    return options.model.getControls();
+  };
+
   
   this.shape = group;
 

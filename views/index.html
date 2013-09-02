@@ -26,15 +26,32 @@
 			</div>
 			<div class="row">
 				<div class="large-6 columns">
-					<h3>Node stuffz</h3>
-					<button class="tiny" ng-click="addNode(node_type)">Add node:</button>
-					<select class="inline" ng-model='node_type'>
-						<option value="oscillator">Oscillator</option>
-						<option value="gain">Gain</option>
-						<option value="delay">Delay</option>
-						<option value="envelope">Envelope</option>
-						<option value="output">Output</option>
-					</select>
+					<div class="row">
+						<div class="large-12 columns">
+							<h3>Node stuffz</h3>
+							<button class="tiny" ng-click="addNode(node_type)">Add node:</button>
+							<select class="inline" ng-model='node_type'>
+								<option value="oscillator">Oscillator</option>
+								<option value="gain">Gain</option>
+								<option value="delay">Delay</option>
+								<option value="envelope">Envelope</option>
+								<option value="output">Output</option>
+							</select>
+						</div>
+					</div>
+					<div class="row" ng-repeat="input in node_controls.inputs">
+						<div class="large-12 columns settings">
+							<label>{{input.name}}:</label>
+							<input ng-model="node_settings[input.name]" ng-change="updateNodeSettings(input.name, node_settings[input.name])" type="{{input.type}}"/>
+						</div>
+					</div>
+					<div class="row" ng-repeat="select in node_controls.selects">
+						<div class="large-12 columns settings">
+							<label>{{select.name}}:</label>
+							<select ng-model="node_settings[select.name]" ng-change="updateNodeSettings(select.name, node_settings[select.name])" ng-options="k as v for (k,v) in select.options">
+							</select>
+						</div>
+					</div>
 				</div>
 				<div class="large-6 columns">
 					<div class="row"><div class="large-12 columns"><h3>Presets</h3></div></div>

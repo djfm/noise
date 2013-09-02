@@ -14,6 +14,8 @@ var instrumentController = function($scope)
 
 	$scope.infoText = "hi!";
 
+	$scope.node_settings={};
+
 	var Controller = function()
 	{
 		this.createNode = function(options)
@@ -33,6 +35,29 @@ var instrumentController = function($scope)
 
 			return node;
 		};
+
+		this.focusNode = function(node)
+		{
+			if(state.focusedNode)
+			{
+				state.focusedNode.unFocus();
+			}
+			node.focus();
+			$scope.node_controls = node.getControls();
+			for(var i in $scope.node_controls.inputs)
+			{
+				$scope.node_settings[$scope.node_controls.inputs[i].name] = $scope.node_controls.inputs[i].value;
+			}
+			for(var i in $scope.node_controls.selects)
+			{
+				$scope.node_settings[$scope.node_controls.selects[i].name] = $scope.node_controls.selects[i].value;
+			}
+
+			console.log($scope.node_settings);
+
+			state.focusedNode = node;
+			$scope.$apply();
+		}
 
 		this.drawConnection = function(x1, y1, x2, y2)
 		{
@@ -361,5 +386,14 @@ var instrumentController = function($scope)
 			break;
 		}
 	}
+
+	$scope.updateNodeSettings = function(key, value)
+	{
+		console.log("Setting current node", key, "to", value);
+		if(state.focusedNode)
+		{
+			state.focusedNode.model.updateSetting(key, value);
+		}
+	};
 
 };

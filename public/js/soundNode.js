@@ -8,20 +8,27 @@ var soundNode = function(options)
 	this.id 		= options.id;
 	this.node_type  = options.node_type;
 
-	
+	if(this.node_type == 'gain')
+	{
+		this.gain = 0.5;
+	}
+	else if(this.node_type == 'oscillator')
+	{
+		this.type = 0;
+	}
 
 	this.getNode = function()
 	{
 		if(this.node_type == 'oscillator')
 		{
 			var node 		= audioContext.createOscillator();
-			node.type		= 0;
+			node.type		= parseInt(this.type);
 			return node;
 		}
 		else if(this.node_type == 'gain')
 		{
 			var node = audioContext.createGain();
-			node.gain.value = 0.5;
+			node.gain.value = this.gain;
 			return node;
 		}
 		else if(this.node_type == 'delay')
@@ -52,6 +59,26 @@ var soundNode = function(options)
 		{
 			return null;
 		}
+	};
+
+	this.getControls = function()
+	{
+		if(this.node_type == 'gain')
+		{
+			return {inputs: [{name: 'gain', type: 'number', value: this.gain}]};
+		}
+		else if(this.node_type == 'oscillator')
+		{
+			return {selects: [{name: 'type', options: {'0': 'Sine', '1': 'Square', '2': 'Triangle', '3': 'Sawtooth'}, value: this.type}]};
+		}
+
+		return {};
+	};
+
+	this.updateSetting = function(key, value)
+	{
+		console.log("Set",key,"to",value);
+		this[key] = value;
 	};
 
 	this.prepareForSerialize = function()

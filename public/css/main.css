@@ -1,6 +1,7 @@
 div#instrument
 {
 	border:1px solid #ccc;
+	background-color: #FEFEFE;
 }
 
 body
@@ -65,4 +66,9 @@ button#new-preset
 {
 	margin-top: 5px;
 	margin-left:3px;
+}
+
+div.settings label
+{
+	font-size: 1em;
 }
