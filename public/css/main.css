@@ -7,3 +7,62 @@ body
 {
 	margin-top: 20px;
 }
+
+textarea#score
+{
+	min-height: 200px;
+}
+
+.center
+{
+	text-align: center;
+}
+
+select.inline
+{
+	width: auto;
+}
+
+div.preset
+{
+	margin:3px;
+	padding:1px;
+	border:1px solid black;
+	border-radius: 3px;
+	background-color: #FBFBFB;
+}
+
+div.preset.active_true
+{
+	background-color: yellow;
+}
+
+div.preset-actions
+{
+	float:right;
+}
+
+div.preset-actions
+{
+	font-size: 0.9em;
+}
+
+div.preset-actions a
+{
+}
+
+.nomargin
+{
+	margin: 0;
+}
+
+.nopadding
+{
+	padding: 0;
+}
+
+button#new-preset
+{
+	margin-top: 5px;
+	margin-left:3px;
+}

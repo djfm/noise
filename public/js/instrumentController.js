@@ -3,7 +3,7 @@ var instrumentController = function($scope)
 	var stage = new Kinetic.Stage({
 	  container: 'instrument',
 	  width: $('#instrument').innerWidth(),
-	  height: 300
+	  height: 400
 	});
 
 	// Hold various info needed by the controller but not angularJS related
@@ -319,12 +319,47 @@ var instrumentController = function($scope)
 
 	$scope.loadPreset = function(name)
 	{
+		$scope.current_preset = name;
 		controller.loadInstrument($scope.presets[name]);
 	};
 
+	$scope.deletePreset = function(name)
+	{
+		delete $scope.presets[name];
+		localStorage.setItem('presets', JSON.stringify($scope.presets));
+		if($scope.presets['default'])
+		{
+			$scope.loadPreset('default');
+		}
+		else
+		{
+			$scope.current_preset = null;
+		}
+	};
+
+	$scope.newPreset = function(name)
+	{
+		if($scope.current_preset)
+		{
+			$scope.savePreset($scope.current_preset);
+		}
+		$scope.presets[name] = "{}";
+		$scope.loadPreset(name);
+		$scope.savePreset(name);
+		$scope.new_preset_name = "";
+	}
+
 	if($scope.presets['default'])
 	{
-		controller.loadInstrument($scope.presets['default']);
+		$scope.loadPreset('default');
+	}
+	else
+	{
+		for(var i in $scope.presets)
+		{
+			$scope.loadPreset(i);
+			break;
+		}
 	}
 
 };

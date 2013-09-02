@@ -13,9 +13,75 @@
 		<link rel="stylesheet" href="/css/main.css"></link>
 	</head>
 
+	<div class="row">
+		<div class="large-6 columns">
+			<h2>Instrument</h2>
+			<div id="instrument"></div>
+		</div>
+		<div class="large-6 columns">
+			<div class="row">
+				<div class="large-12 columns">
+					<h2>Instrument Settings</h2>
+				</div>
+			</div>
+			<div class="row">
+				<div class="large-6 columns">
+					<h3>Node stuffz</h3>
+					<button class="tiny" ng-click="addNode(node_type)">Add node:</button>
+					<select class="inline" ng-model='node_type'>
+						<option value="oscillator">Oscillator</option>
+						<option value="gain">Gain</option>
+						<option value="delay">Delay</option>
+						<option value="envelope">Envelope</option>
+						<option value="output">Output</option>
+					</select>
+				</div>
+				<div class="large-6 columns">
+					<div class="row"><div class="large-12 columns"><h3>Presets</h3></div></div>
+					<div ng-repeat="(preset, unused) in presets" class="row">
+						<div class="large-12 columns">
+							<div class="preset active_{{(preset==current_preset)}}">
+								{{preset}}
+								<div class="preset-actions">
+									(<a ng-click='loadPreset(preset)'>load</a>|<a ng-click='savePreset(preset)'>save</a>|<a ng-click='deletePreset(preset)'>delete</a>)
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="large-12 columns">
+							<hr/>
+							<form ng-submit="newPreset(new_preset_name)">
+								<button id="new-preset" class="tiny success">New preset</button>
+								<input ng-model="new_preset_name" required type="text"></input>
+								Please type name of the preset to be created above!
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="large-6 columns">
+			<div class="row" style="margin-top:15px">
+				<div class="large-12 columns">
+					<h2>Score</h2>
+					<textarea id="score" ng-model="score"></textarea>
+				</div>
+			</div>
+			<div class="row">
+				<div class="large-12 columns">
+					<button ng-click="play(score)">Play!</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<body ng-app ng-controller="instrumentController">
 
-		<div class="row">
+		<!--div class="row">
 			<div class="large-2 columns">
 				&nbsp;
 			</div>
@@ -24,13 +90,7 @@
 					<div class="large-6 columns">
 						<div class="row">
 							<div class="large-4 columns">
-								<select ng-model='node_type'>
-									<option value="oscillator">Oscillator</option>
-									<option value="gain">Gain</option>
-									<option value="delay">Delay</option>
-									<option value="envelope">Envelope</option>
-									<option value="output">Output</option>
-								</select>
+								
 							</div>
 							<div class="large-4 columns">
 								<button class="tiny" ng-click="addNode(node_type)">Add node!</button>
@@ -68,23 +128,13 @@
 					</div>
 				</div>
 				
-				<div class="row" style="margin-top:15px">
-					<div class="large-12 columns">
-						<textarea ng-model="score"></textarea>
-					</div>
-				</div>
-
-				<div class="row">
-					<div class="large-12 columns">
-						<button ng-click="play(score)">Play!</button>
-					</div>
-				</div>
+				
 
 			</div>
 			<div class="large-2 columns">
 				&nbsp;
 			</div>
-		</div>
+		</div-->
 
 		
 
