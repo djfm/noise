@@ -243,9 +243,9 @@ var instrumentController = function($scope)
 	dbg_controller = controller;
 	dbg_state 	   = state;
 
-	$scope.presets = JSON.parse(localStorage.getItem('presets')) || {};
+	$scope.presets = JSON.parse(localStorage.getItem('presets')) || {'default' : '{"0":{"inputs":{},"outputs":{"6":4},"id":0,"node_type":"oscillator","viewPosition":{"x":0,"y":0}},"1":{"inputs":{"4":7},"outputs":{},"id":1,"node_type":"output","viewPosition":{"x":233,"y":83}},"2":{"inputs":{"3":7,"6":3},"outputs":{"3":4},"id":2,"node_type":"gain","viewPosition":{"x":11,"y":128},"gain":"0.5"},"3":{"inputs":{"2":0},"outputs":{"2":3,"5":6},"id":3,"node_type":"delay","viewPosition":{"x":30,"y":211}},"4":{"inputs":{"5":1},"outputs":{"1":3,"5":2},"id":4,"node_type":"delay","viewPosition":{"x":330,"y":178}},"5":{"inputs":{"3":1,"4":7},"outputs":{"4":6},"id":5,"node_type":"gain","viewPosition":{"x":196,"y":199},"gain":"0.5"},"6":{"inputs":{"0":3},"outputs":{"2":4},"id":6,"node_type":"envelope","viewPosition":{"x":0,"y":63},"vmax":"1","vplat":"0.9","a":"0.05","d":"0.07","s":"0.3","r":"0.1"}}'};
 
-	$scope.score = localStorage.getItem('score') || "";
+	$scope.score = localStorage.getItem('score') || "(ACE)AAFF(FAC) CE(CEG)GGD/2B/2(GDB)/2";
 
 	$scope.addNode = function(node_type)
 	{
@@ -262,11 +262,11 @@ var instrumentController = function($scope)
 		for(var i in oscillators)
 		{
 			var osc = oscillators[i];
-			osc.frequency.value = freq;
+			osc.frequency.value = freq * (osc.frequency_multiplier || 1);
 			osc.start(0);
 			setTimeout(function(){
 				osc.stop(0);
-			}, duration);
+			}, 10000);
 		}
 	};
 
@@ -276,12 +276,12 @@ var instrumentController = function($scope)
 		playNote(oscillators, 440, 1000);
 	};
 
-	$scope.dt   = 500;
+	$scope.dt   = 125;
 	$scope.play = function(score)
 	{
 		localStorage.setItem('score', score);
 
-		var exp = /(?:\[\w+\])|(?:\(\w+\))|\w|\s/g;
+		var exp = /((?:\[\w+\])|(?:\(\w+\))|\w|\s)(?:(\/|\*)(\d+(?:\.\d+)?))?/g;
 
 		var beats = score.match(exp);
 		var n = 0;
@@ -294,6 +294,16 @@ var instrumentController = function($scope)
 			{
 				var what = beats[n];
 				n += 1;
+				var m;
+
+				var mult = 1;
+
+				if(m = /^(.*?)(?:(\/|\*)(\d+(?:\.\d+)?))$/.exec(what))
+				{
+					what = m[1];
+					if(m[2] == '*')mult*=parseFloat(m[3]);
+					else mult /= parseFloat(m[3]);
+				}
 
 				if(what != "\n")
 				{
@@ -322,7 +332,7 @@ var instrumentController = function($scope)
 					for(var note in notes)
 					{
 						var oscillators = controller.makeInstrument();
-						playNote(oscillators, getFreq(notes[note]), $scope.dt);
+						playNote(oscillators, getFreq(notes[note])*mult, $scope.dt);
 					}
 					
 					setTimeout(function(){start()}, $scope.dt);
@@ -389,7 +399,6 @@ var instrumentController = function($scope)
 
 	$scope.updateNodeSettings = function(key, value)
 	{
-		console.log("Setting current node", key, "to", value);
 		if(state.focusedNode)
 		{
 			state.focusedNode.model.updateSetting(key, value);
