@@ -29,6 +29,10 @@ var nodeView = function(options)
   {
     this.backgroundColor = 'orange';
   }
+  else if(options.model.node_type == 'filter')
+  {
+    this.backgroundColor = 'pink';
+  }
 
   this.inputs  = {};
   this.outputs = {};

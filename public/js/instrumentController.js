@@ -155,7 +155,7 @@ var instrumentController = function($scope)
 			{
 				if(!cache.connections[[i,o]])
 				{
-					cache.connections[[i,o]] = true;
+					cache.connections[[i,o]] = [i,o];
 					impl.connect(this.makeAndConnect(o, cache));
 				}
 			}
@@ -177,7 +177,7 @@ var instrumentController = function($scope)
 				}
 			}
 
-			return oscillators;
+			return {oscillators: oscillators, nodes: cache.nodes, connections: cache.connections};
 		};
 
 		this.serializeInstrument = function()
@@ -243,9 +243,11 @@ var instrumentController = function($scope)
 	dbg_controller = controller;
 	dbg_state 	   = state;
 
-	$scope.presets = JSON.parse(localStorage.getItem('presets')) || {'default' : '{"0":{"inputs":{},"outputs":{"6":4},"id":0,"node_type":"oscillator","viewPosition":{"x":0,"y":0}},"1":{"inputs":{"4":7},"outputs":{},"id":1,"node_type":"output","viewPosition":{"x":233,"y":83}},"2":{"inputs":{"3":7,"6":3},"outputs":{"3":4},"id":2,"node_type":"gain","viewPosition":{"x":11,"y":128},"gain":"0.5"},"3":{"inputs":{"2":0},"outputs":{"2":3,"5":6},"id":3,"node_type":"delay","viewPosition":{"x":30,"y":211}},"4":{"inputs":{"5":1},"outputs":{"1":3,"5":2},"id":4,"node_type":"delay","viewPosition":{"x":330,"y":178}},"5":{"inputs":{"3":1,"4":7},"outputs":{"4":6},"id":5,"node_type":"gain","viewPosition":{"x":196,"y":199},"gain":"0.5"},"6":{"inputs":{"0":3},"outputs":{"2":4},"id":6,"node_type":"envelope","viewPosition":{"x":0,"y":63},"vmax":"1","vplat":"0.9","a":"0.05","d":"0.07","s":"0.3","r":"0.1"}}'};
+	$scope.presets = JSON.parse(localStorage.getItem('presets')) || {'default' : '{}'};
 
-	$scope.score = localStorage.getItem('score') || "(ACE)AAFF(FAC) CE(CEG)GGD/2B/2(GDB)/2";
+	//'{"0":{"inputs":{},"outputs":{"6":4},"id":0,"node_type":"oscillator","viewPosition":{"x":0,"y":0}},"1":{"inputs":{"4":7},"outputs":{},"id":1,"node_type":"output","viewPosition":{"x":233,"y":83}},"2":{"inputs":{"3":7,"6":3},"outputs":{"3":4},"id":2,"node_type":"gain","viewPosition":{"x":11,"y":128},"gain":"0.5"},"3":{"inputs":{"2":0},"outputs":{"2":3,"5":6},"id":3,"node_type":"delay","viewPosition":{"x":30,"y":211}},"4":{"inputs":{"5":1},"outputs":{"1":3,"5":2},"id":4,"node_type":"delay","viewPosition":{"x":330,"y":178}},"5":{"inputs":{"3":1,"4":7},"outputs":{"4":6},"id":5,"node_type":"gain","viewPosition":{"x":196,"y":199},"gain":"0.5"},"6":{"inputs":{"0":3},"outputs":{"2":4},"id":6,"node_type":"envelope","viewPosition":{"x":0,"y":63},"vmax":"1","vplat":"0.9","a":"0.05","d":"0.07","s":"0.3","r":"0.1"}}
+
+	$scope.score = localStorage.getItem('score') || "";
 
 	$scope.addNode = function(node_type)
 	{
@@ -257,23 +259,33 @@ var instrumentController = function($scope)
 		})		
 	};
 
-	function playNote(oscillators, freq, duration)
+	function playNote(instr, freq, duration)
 	{
-		for(var i in oscillators)
+		for(var i in instr.oscillators)
 		{
-			var osc = oscillators[i];
+			var osc = instr.oscillators[i];
 			osc.frequency.value = freq * (osc.frequency_multiplier || 1);
 			osc.start(0);
-			setTimeout(function(){
-				osc.stop(0);
-			}, 10000);
 		}
+
+		setTimeout(function(){
+			for(var conn in instr.connections)
+			{
+				var c = instr.connections[conn]; 
+				instr.nodes[c[0]].disconnect(instr.nodes[c[1]]);
+			}
+			for(var o in instr.oscillators)
+			{
+				instr.oscillators[o].stop(0);
+			}
+		}, 5000);
+
 	};
 
 	$scope.bleep = function()
 	{
-		var oscillators = controller.makeInstrument();
-		playNote(oscillators, 440, 1000);
+		var instr = controller.makeInstrument();
+		playNote(instr, 440, 1000);
 	};
 
 	$scope.dt   = 125;

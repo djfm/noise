@@ -15,4 +15,8 @@ app.get('/', function(req, res){
 	res.sendfile(__dirname + '/views/index.html');
 });
 
+app.get('/track', function(req, res){
+	res.sendfile(__dirname + '/views/track.html');
+});
+
 app.listen(7654);

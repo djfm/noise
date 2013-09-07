@@ -68,13 +68,20 @@ var soundNode = function(options)
 			gain.gain.linearRampToValueAtTime(0   		   , t);
 			return gain;
 		}
+		else if(this.node_type == 'filter')
+		{
+			var filter = audioContext.createBiquadFilter();
+
+			filter.gain.value = this.gain;
+			filter.frequency.value = this.frequency;
+			filter.detune.value = this.detune;
+			filter.type = this.type;
+
+			return filter;
+		}
 		else if(this.node_type == 'output')
 		{
-
-			var gain = audioContext.createGain();
-			gain.gain.value = 0.4;
-			gain.connect(audioContext.destination);
-			return gain;
+			return audioContext.destination;
 		}
 		else
 		{
@@ -104,8 +111,23 @@ var soundNode = function(options)
 				{name: 'a'		, type: 'number', value: this.a},
 				{name: 'd'		, type: 'number', value: this.d},
 				{name: 's'		, type: 'number', value: this.s},
-				{name: 'r'		, type: 'number', value: this.r},
+				{name: 'r'		, type: 'number', value: this.r}
 			]};
+		}
+		else if(this.node_type == 'filter')
+		{
+			return {inputs: [
+				{name: 'gain'		, type: 'number', value: this.gain},
+				{name: 'detune'		, type: 'number', value: this.detune},
+				{name: 'frequency'	, type: 'number', value: this.frequency}
+				],
+				selects: [{name: 'type', options: {
+							'lowpass' : 'Lowpass'
+						},
+						value:this.type
+					}
+				]
+			};
 		}
 
 		return {};
