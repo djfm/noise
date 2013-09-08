@@ -4,6 +4,10 @@ var Track = function(options)
 
 	my.name = options.name;
 	my.measureCount = options.measureCount || 4;
+	my.beatsPerMeasure = options.beatsPerMeasure || 4;
+	my.notesPerBeat = options.notesPerBeat || 4;
+	my.maxOctave = options.maxOctave || 8;
+	my.minOctave = options.minOctave || 0;
 
 	my.segments = {};
 

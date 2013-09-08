@@ -10,8 +10,10 @@
 		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
 		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.forms.js"></script>
 
+		<script src="/js/solfege.js"></script>
 		<script src="/js/scrollBar.js"></script>
 		<script src="/js/track.js"></script>
+		<script src="/js/patternView.js"></script>
 		<script src="/js/sequencerView.js"></script>
 
 		<link rel="stylesheet" href="/css/main.css"></link>
@@ -41,19 +43,37 @@
 
 
 		<script type="text/javascript">
-		
+			
+			var patternStage = new Kinetic.Stage({
+				container: 'pattern',
+				width: $('#pattern').innerWidth(),
+				height: $('#pattern').innerHeight(),
+			});
+
 			var sequencerStage = new Kinetic.Stage({
 				container: 'sequencer',
 				width: $('#sequencer').innerWidth(),
 				height: $('#sequencer').innerHeight(),
 			});
 
+			var tracks = [new Track({name: "Piano"}), new Track({name: "Guitar"}), new Track({name: "Bass"})];
+
+			var patternView = new PatternView({
+				stage: patternStage,
+				width: patternStage.getWidth(),
+				height: patternStage.getHeight(),
+			});
+
+
 			var sequencerView = new SequencerView({
 				stage: sequencerStage,
 				width: sequencerStage.getWidth(),
 				height: sequencerStage.getHeight(), 
-				tracks: [new Track({name: "Piano"}), new Track({name: "Guitar"}), new Track({name: "Bass"})]
+				tracks: tracks,
+				patternView: patternView
 			});
+
+			patternView.setModel(tracks[0]);
 
 		</script>
 

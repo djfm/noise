@@ -411,6 +411,8 @@ var SequencerView = function(options){
 		my.verticalScrollBarWidth = 20;
 		my.verticalScrollBarMargin = 3;
 
+		my.patternView = options.patternView;
+
 		my.layer = new Kinetic.Layer();
 
 		my.handlesLayer = new Kinetic.Layer({clip: [
