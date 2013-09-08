@@ -10,13 +10,21 @@
 		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
 		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.forms.js"></script>
 
+		<script src="/js/scrollBar.js"></script>
+		<script src="/js/track.js"></script>
 		<script src="/js/sequencerView.js"></script>
 
 		<link rel="stylesheet" href="/css/main.css"></link>
 
 
 		<style type="text/css">
-			div#scene
+			div#pattern
+			{
+				height:400px;
+				border:1px solid #CCC;
+				margin:5px;
+			}
+			div#sequencer
 			{
 				height:400px;
 				border:1px solid #CCC;
@@ -26,55 +34,25 @@
 	</head>
 
 	<body>
-		<div id="scene">
-			&nbsp;
+		<div id="pattern">
+		</div>
+		<div id="sequencer">
 		</div>
 
 
 		<script type="text/javascript">
 		
-			var stage = new Kinetic.Stage({
-				container: 'scene',
-				width: $('#scene').innerWidth(),
-				height: $('#scene').innerHeight(),
+			var sequencerStage = new Kinetic.Stage({
+				container: 'sequencer',
+				width: $('#sequencer').innerWidth(),
+				height: $('#sequencer').innerHeight(),
 			});
-
-			/*
-			var layer = new Kinetic.Layer();
-			var group = new Kinetic.Group({
-				clip: [100, 40, 200, 100],
-			});
-
-			var blueBlob = new Kinetic.Blob({
-				points: [73, 140, 340, 23, 500, 109, 300, 170],
-				stroke: 'blue',
-				strokeWidth: 10,
-				fill: '#aaf',
-				tension: 0.8
-			});
-
-			var redBlob = new Kinetic.Blob({
-				points: [73, 140, 340, 23, 500, 109],
-				stroke: 'red',
-				strokeWidth: 10,
-				fill: '#faa',
-				tension: 1.2,
-				scale: 0.5,
-				x: 100,
-				y: 50,
-				draggable: true
-			});
-
-			group.add(blueBlob);
-			group.add(redBlob);
-			layer.add(group);
-			stage.add(layer);*/
 
 			var sequencerView = new SequencerView({
-				stage: stage,
-				width: stage.getWidth(),
-				height: stage.getHeight(), 
-				tracks: {"Piano": {}, "Guitar": {}, "Bass": {}, "Trombone": {}, "Bioubiou": {}, "Cymbals": {}, "Stuff": {}, "Zorb": {}, "Flute": {}, "Zigou": {}}
+				stage: sequencerStage,
+				width: sequencerStage.getWidth(),
+				height: sequencerStage.getHeight(), 
+				tracks: [new Track({name: "Piano"}), new Track({name: "Guitar"}), new Track({name: "Bass"})]
 			});
 
 		</script>

@@ -1,157 +1,3 @@
-var ScrollBar = function(options)
-{
-	var my = this;
-	my.direction = options.direction;
-	my.x = options.x;
-	my.y = options.y;
-	my.width = options.width;
-	my.height = options.height;
-	my.layer = options.layer;
-	my.scrollerMargin = 2;
-	my.minValue = options.minValue;
-	my.maxValue = options.maxValue;
-
-	my.onScroll = options.onScroll || function(move){
-	};
-
-	my.rect = new Kinetic.Rect({
-		x: my.x,
-		y: my.y,
-		width: my.width,
-		height: my.height,
-		fill: 'lightyellow',
-		stroke: 'black',
-		strokeWidth: 1
-	});
-
-	my.scrollerSize = function()
-	{
-		var s = my.direction == "horizontal" ? my.width : my.height;
-		return (s+s*s) / (s + my.maxValue - my.minValue);
-	};
-
-	if(my.direction == 'horizontal')
-	{
-		var xmin = function()
-		{
-			return my.x + my.scrollerMargin
-		};
-
-		var xmax = function()
-		{
-			return my.x + my.width - my.scrollerMargin - my.scrollerSize();
-		};
-
-		my.getPos = function()
-		{
-			return (my.px_pos - xmin())/xmax();
-		};
-
-		my.px_pos = xmin();
-		my.old_px_pos = xmin();
-
-		my.setPos = function(p)
-		{
-			p = Math.max(Math.min(p, 1), 0);
-			my.px_pos = xmin() + p * (xmax() - xmin());
-			var pos = my.scroller.getAbsolutePosition();
-			pos.x = my.px_pos;
-			my.scroller.setAbsolutePosition(pos);
-			my.layer.draw();
-			return p;
-		}
-
-		my.scroller = new Kinetic.Rect({
-			x: my.px_pos,
-			y: my.y + my.scrollerMargin,
-			width: my.scrollerSize(),
-			height: my.height - 2*my.scrollerMargin,
-			fill: 'black',
-			stroke: 'white',
-			strokeWidth: 1,
-			draggable: true,
-			dragBoundFunc: function(pos){
-				var old_px_pos = my.px_pos;
-				my.px_pos = Math.min(Math.max(xmin(), pos.x), xmax());
-				return {x: my.px_pos, y:this.getAbsolutePosition().y};
-			}
-		});
-	}
-	else if(my.direction == 'vertical')
-	{
-		var ymin = function()
-		{
-			return my.y + my.scrollerMargin
-		};
-
-		var ymax = function()
-		{
-			return my.y + my.height - my.scrollerMargin - my.scrollerSize();
-		};
-
-		my.getPos = function()
-		{
-			return (my.px_pos - ymin())/ymax();
-		};
-
-		my.px_pos = ymin();
-		my.old_px_pos = ymin();
-
-		my.setPos = function(p)
-		{
-			p = Math.max(Math.min(p, 1), 0);
-			my.px_pos = ymin() + p * (ymax() - ymin());
-			var pos = my.scroller.getAbsolutePosition();
-			pos.y = my.px_pos;
-			my.scroller.setAbsolutePosition(pos);
-			my.layer.draw();
-			return p;
-		}
-
-		my.scroller = new Kinetic.Rect({
-			x: my.x + my.scrollerMargin,
-			y: my.px_pos,
-			width: my.width - 2*my.scrollerMargin,
-			height: my.scrollerSize(),
-			fill: 'black',
-			stroke: 'white',
-			strokeWidth: 1,
-			draggable: true,
-			dragBoundFunc: function(pos){
-				my.px_pos = Math.min(Math.max(ymin(), pos.y), ymax());	
-				return {x: this.getAbsolutePosition().x, y: my.px_pos};
-			}
-		});
-	}
-	else
-	{
-		throw "Illegal scrollbar direction: " + my.direction;
-	}
-
-	my.scroller.on('dragend', function(move){
-		if(my.direction == 'horizontal')
-		{
-			my.onScroll({
-				pos: my.getPos(),
-				value: my.minValue + my.getPos() * (my.maxValue- my.minValue),
-				delta: (my.px_pos - my.old_px_pos) / (xmax() - xmin()) * (my.maxValue - my.minValue)
-			});
-		}
-		else if(my.direction == 'vertical')
-		{
-			my.onScroll({
-				pos: my.getPos(),
-				value: my.minValue + my.getPos() * (my.maxValue- my.minValue),
-				delta: (my.px_pos - my.old_px_pos) / (ymax() - ymin()) * (my.maxValue - my.minValue)
-			});
-		}
-		my.old_px_pos = my.px_pos;
-	});
-
-	my.layer.add(my.rect);
-	my.layer.add(my.scroller);
-};
-
 var SequencerView = function(options){
 	// I always use "my" instead of "this" to avoid using the wrong "this" in the numerous callbacks
 	var my = this;
@@ -182,12 +28,16 @@ var SequencerView = function(options){
 		my.layer.add(tracksPanel);
 
 		var n = 0;
-		for(var name in tracks)
+		for(var i in tracks)
 		{
-			var track = my.addTrack({id: n, name: name, track: tracks[name]});
+			var track = my.addTrack({id: n, position: n, name: tracks[i].name, model: tracks[i]});
 			my.drawTrack(track);
 			n += 1;
 		}
+
+		/*
+		* Setup horizontal scrollBar
+		*/
 
 		my.horizontalScrollBar = new ScrollBar({
 			direction: 'horizontal',
@@ -197,7 +47,7 @@ var SequencerView = function(options){
 			width: my.width - my.leftPanelWidth - my.leftPanelMargin - 2*my.horizontalScrollBarMargin,
 			height: my.horizontalScrollBarHeight,
 			minValue: 0,
-			maxValue: my.trackScoreWidth() - (my.width - my.leftPanelWidth - my.leftPanelMargin) + 2*my.trackMargin,
+			maxValue: my.trackScoreWidth() - (my.width - my.leftPanelWidth - my.leftPanelMargin) + 4*my.trackMargin,
 			onScroll: function(move){
 				my.scoresLayer.move(-move.delta, 0);
 				var clip = my.scoresLayer.getClip();
@@ -206,6 +56,10 @@ var SequencerView = function(options){
 				my.scoresLayer.draw();
 			}
 		});
+
+		/*
+		* Setup vertical scrollBar
+		*/
 		
 		my.verticalScrollBar = new ScrollBar({
 			direction: 'vertical',
@@ -251,8 +105,18 @@ var SequencerView = function(options){
 		t.scoreGroup.remove();
 		t.handleGroup.remove();
 		delete my.tracks[id];
-		my.scoresLayer.draw();
-		my.handlesLayer.draw();
+
+		for(var i in my.tracks)
+		{
+			if(my.tracks[i].position > t.position)
+			{
+				my.tracks[i].position -= 1;
+			}
+		}
+
+		my.redrawTracks();
+
+		my.verticalScrollBar.setMaxValue(my.tracksHeight() - my.height + 2*my.trackMargin);
 	}
 
 	my.tracksHeight = function()
@@ -262,16 +126,15 @@ var SequencerView = function(options){
 
 	my.drawTrack = function(track)
 	{
-		var handle_x = my.x + my.trackMargin;
-		var handle_y = my.y + my.trackMargin + track.id*(my.trackHeight + 2*my.trackMargin);
+		var position = my.computeTrackPos(track);
 
 		track.handleGroup = new Kinetic.Group();
 
 		track.handle = new Kinetic.Rect({
-			x: handle_x,
-			y: handle_y,
-			width: my.leftPanelWidth - 2*my.trackMargin,
-			height: my.trackHeight,
+			x: position.handle.x,
+			y: position.handle.y,
+			width: position.handle.width,
+			height: position.handle.height,
 			fill: '#CCC',
 			stroke: 'black',
 			strokeWidth: 1
@@ -279,37 +142,117 @@ var SequencerView = function(options){
 
 		track.handleGroup.add(track.handle);
 
-		var removeImg = new Image();
-		removeImg.onload = function()
-		{
-			var img = new Kinetic.Image({
-				x: handle_x + my.leftPanelWidth - 3*my.trackMargin - 16,
-				y: handle_y + my.trackMargin,
-				image: removeImg,
-				width: 16,
-				height: 16,
-			});
-			
+		/*
+		* Helper function to add image
+		*/
 
-			track.handleGroup.add(img);
+		var addImg = function(path, x, y, width, height, callback){
+			var htmlImg = new Image();
+			htmlImg.onload = function()
+			{
+				var img = new Kinetic.Image({
+					x: x,
+					y: y,
+					image: htmlImg,
+					width: width,
+					height: height,
+				});
+				track.handleGroup.add(img);
+				if(callback)
+				{
+					callback(img);
 
-			img.on('click', function(){
-				my.removeTrack(track.id);
-			});
-
-			my.handlesLayer.draw();
+					img.on('mouseover', function(){
+						document.body.style.cursor = 'pointer';
+					});
+					img.on('mouseout', function(){
+						document.body.style.cursor = 'default';
+					});
+				}
+				my.handlesLayer.draw();
+			};
+			htmlImg.src = path;
 		};
-		removeImg.src = "/img/remove.png";
+
+		/*
+		* Add the remove icon
+		*/
+
+		addImg(
+				"/img/remove.png",
+				position.handle.x + position.handle.width - my.trackMargin - 16,
+				position.handle.y + my.trackMargin,
+				16,
+				16,
+				function(img){
+					img.on('click', function(){
+						my.removeTrack(track.id);
+					});
+				}
+		);
+
+		/*
+		* Add the up icon
+		*/
+
+		addImg(
+				"/img/up.png",
+				position.handle.x + my.trackMargin,
+				position.handle.y + my.trackMargin,
+				16,
+				16,
+				function(img){
+					img.on('click', function(){
+						my.moveTrack(track.id, -1);
+					});
+				}
+		);
+
+		/*
+		* Add the down icon
+		*/
+
+		addImg(
+				"/img/down.png",
+				position.handle.x + my.trackMargin,
+				position.handle.y + my.trackHeight - my.trackMargin - 16,
+				16,
+				16,
+				function(img){
+					img.on('click', function(){
+						my.moveTrack(track.id, 1);
+					});
+				}
+		);
+
+		/*
+		* Add the track caption
+		*/
+
+		track.caption = new Kinetic.Text({
+			x: position.handle.x + 32,
+			y: position.handle.y + my.trackMargin,
+			text: track.model.name,
+			fontSize: 15,
+			fontFamily: 'sans-serif',
+			fill: 'black'
+		});
+
+		track.handleGroup.add(track.caption);
 
 		my.handlesLayer.add(track.handleGroup);
 
 		track.scoreGroup = new Kinetic.Group();
 
+		/*
+		* Add the score big rectangle
+		*/
+
 		track.score = new Kinetic.Rect({
-			x: my.x + my.trackMargin + my.leftPanelWidth + my.leftPanelMargin,
-			y: my.y + my.trackMargin + track.id*(my.trackHeight + 2*my.trackMargin),
-			width: my.trackScoreWidth(),
-			height: my.trackHeight,
+			x: position.score.x,
+			y: position.score.y,
+			width: position.score.width,
+			height: position.score.height,
 			fill: 'white',
 			stroke: 'black',
 			strokeWidth: 1
@@ -317,22 +260,54 @@ var SequencerView = function(options){
 
 		track.scoreGroup.add(track.score);
 
+		/*
+		* Add the rectangles for the measures
+		*/
 		for(var i=0; i<my.measureCount; i+=1)
 		{
 			var rect = new Kinetic.Rect({
-				x: my.x + my.trackMargin + my.leftPanelWidth + my.leftPanelMargin + i*(my.measureWidth+2*my.measureMargin) + my.measureMargin,
-				y: my.y + my.trackMargin + track.id*(my.trackHeight + 2*my.trackMargin)+1,
+				x: position.score.x + i*(my.measureWidth+2*my.measureMargin) + my.measureMargin,
+				y: position.score.y + 1,
 				width: my.measureWidth,
 				height: my.trackHeight-2,
 				fill: 'white',
 			});
 
+			track.measures[i] = rect;
+
+			// We need a scope to access i in the callback! Neat Javascript, easy to read :)
+			var callback = (function(j){return function(){
+				if(track.canAddSegmentAt(j))
+				{
+					track.addSegmentAt(j);
+					var seg = new Kinetic.Rect({
+						x: track.measures[j].getPosition().x,
+						y: track.measures[j].getPosition().y - 1,
+						width: track.getMeasureCount() * (my.measureWidth + 2*my.measureMargin) - 2*my.measureMargin,
+						height: my.trackHeight,
+						fill: 'green',
+						opacity: 0.7,
+						stroke: 'black',
+						strokeWidth: 2
+					});
+					track.scoreGroup.add(seg);
+					my.scoresLayer.draw();
+
+					seg.on("click", function(){
+						track.removeSegmentAt(j);
+						seg.remove();
+						my.scoresLayer.draw();
+					});
+				}
+			}})(i);
+			rect.on('click', callback);
+
 			track.scoreGroup.add(rect);
 
 			if(i > 0)
 			{
-				var x = my.x + my.trackMargin + my.leftPanelWidth + my.leftPanelMargin + i*(my.measureWidth+2*my.measureMargin) + my.measureMargin/2;
-				var y = my.y + my.trackMargin + track.id*(my.trackHeight + 2*my.trackMargin)+1;
+				var x = position.score.x + i*(my.measureWidth+2*my.measureMargin) + my.measureMargin/2;
+				var y = position.score.y + 1;
 				var line = new Kinetic.Line({
 					points: [x, y, x, y+my.trackHeight-2],
 					stroke: 'black',
@@ -347,10 +322,75 @@ var SequencerView = function(options){
 		
 	};
 
+	my.computeTrackPos = function(track, num)
+	{
+		if(num === undefined)
+		{
+			num = track.id;
+		}
+
+		return {
+			handle: {	x: 		my.x + my.trackMargin, 
+						y: 		my.y + my.trackMargin + num*(my.trackHeight + 2*my.trackMargin), 
+						width: 	my.leftPanelWidth - 2*my.trackMargin, 
+						height: my.trackHeight
+			},
+			score: {
+						x: 		my.x + my.leftPanelWidth + my.leftPanelMargin + 2*my.trackMargin, 
+						y: 		my.y + my.trackMargin + num*(my.trackHeight + 2*my.trackMargin), 
+						width: 	my.trackScoreWidth(), 
+						height: my.trackHeight
+			}
+		};
+	};
+
+	my.redrawTracks = function()
+	{
+		for(var i in my.tracks)
+		{
+			my.redrawTrack(i);
+		}
+		my.handlesLayer.draw();
+		my.scoresLayer.draw();
+	};
+
+	my.moveTrack = function(id, delta)
+	{
+		var track = my.tracks[id];
+		for(var i in my.tracks)
+		{
+			if(my.tracks[i].position == track.position + delta)
+			{
+				track.position += delta;
+				my.tracks[i].position -= delta;
+				break;
+			}
+		}
+		
+		my.redrawTracks();
+	};
+
+	my.redrawTrack = function(id)
+	{
+		var track = my.tracks[id];
+		var pos   = my.computeTrackPos(track, track.position);
+
+		var trackPos  = track.score.getAbsolutePosition();
+		var handlePos = track.handle.getAbsolutePosition();
+
+		var trackDx   = pos.score.x - trackPos.x;
+		var trackDy   = pos.score.y - trackPos.y;
+		var handleDx  = pos.handle.x - handlePos.x;
+		var handleDy  = pos.handle.y - handlePos.y;
+
+		track.handleGroup.move(handleDx, handleDy);
+		track.scoreGroup.move(trackDx, trackDy);
+	};
+
 	my.trackScoreWidth = function()
 	{
 		return (my.measureWidth + 2*my.measureMargin) * my.measureCount;
-	}
+	};
 
 	my.init = function(options)
 	{
@@ -365,7 +405,7 @@ var SequencerView = function(options){
 		my.trackMargin 		= 3;
 		my.measureWidth  	= 50;
 		my.measureCount  	= 100;
-		my.measureMargin  	= 2;
+		my.measureMargin  	= 0;
 		my.horizontalScrollBarHeight = 20;
 		my.horizontalScrollBarMargin = 3;
 		my.verticalScrollBarWidth = 20;
@@ -406,4 +446,29 @@ var TrackView = function(options)
 {
 	var my = this;
 	my.id = options.id;
+
+	my.model 	= options.model;
+	my.position = options.position;
+
+	my.measures = {};
+
+	my.canAddSegmentAt = function(i)
+	{
+		return my.model.canAddSegmentAt(i);
+	};
+
+	my.addSegmentAt = function(i)
+	{
+		return my.model.addSegmentAt(i);
+	}
+
+	my.getMeasureCount = function()
+	{
+		return my.model.measureCount;
+	};
+
+	my.removeSegmentAt = function(i)
+	{
+		return my.model.removeSegmentAt(i);
+	};
 };
