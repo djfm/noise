@@ -11,6 +11,8 @@ var Track = function(options)
 
 	my.segments = {};
 
+	my.notes = {};
+
 	my.canAddSegmentAt = function(i, len)
 	{
 		if(len === undefined)len = my.measureCount;
@@ -39,4 +41,43 @@ var Track = function(options)
 	{
 		delete my.segments[i];
 	};
+
+	my.canAddNoteAt = function(pos, semitone, len)
+	{
+		if(len === undefined)len = my.notesPerBeat;
+
+		for(var n in my.notes)
+		{
+			var t = parseInt(n);
+			var tlen;
+			if(tlen = my.notes[n][semitone])
+			{
+				if((pos < t + tlen) && (t < pos + len))
+				{
+					return false;
+				}
+			}
+		}
+
+		return true;
+	};
+
+	my.addNoteAt = function(pos, semitone, len)
+	{
+		//console.log("Adding note at", pos, semitone, "with len", len);
+		
+		if(len === undefined)len = my.notesPerBeat;
+		if(!my.notes[pos])my.notes[pos] = {};
+		my.notes[pos][semitone] = len;
+	};
+
+	my.removeNoteAt = function(pos, semitone)
+	{
+		//console.log("Removing note at", pos, semitone);
+
+		if(my.notes[pos] && my.notes[pos][semitone])
+		{
+			delete my.notes[pos][semitone];
+		}
+	}
 };

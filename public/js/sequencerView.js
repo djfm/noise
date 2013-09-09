@@ -140,7 +140,28 @@ var SequencerView = function(options){
 			strokeWidth: 1
 		});
 
+		track.handle.oldFill = track.handle.getFill();
+
+		track.handle.on('click', function(){
+			
+			if(track != my.focusedTrack)
+			{
+				if(my.focusedTrack)
+				{
+					my.focusedTrack.handle.setFill(my.focusedTrack.handle.oldFill);
+				}
+				track.handle.setFill('white');
+
+				my.handlesLayer.draw();
+
+				my.focusedTrack = track;
+				my.onTrackFocused();
+			}
+			
+		});
+
 		track.handleGroup.add(track.handle);
+
 
 		/*
 		* Helper function to add image
@@ -438,6 +459,14 @@ var SequencerView = function(options){
 
 		my.setupUI(options.tracks);
 	}
+
+	my.onTrackFocused = function()
+	{
+		if(my.patternView)
+		{
+			my.patternView.setModel(my.focusedTrack.model);
+		}
+	};
 
 	// Construct the object
 	my.init(options);
