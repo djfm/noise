@@ -13,6 +13,12 @@ var Track = function(options)
 
 	my.notes = {};
 
+	my.viewData = {
+		penMeasuresCount: options.penMeasuresCount || 0,
+		penBeatsCount: options.penBeatsCount || 1,
+		penNotesCount: options.penNotesCount || 0
+	};
+
 	my.canAddSegmentAt = function(i, len)
 	{
 		if(len === undefined)len = my.measureCount;

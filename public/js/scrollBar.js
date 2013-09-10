@@ -150,11 +150,11 @@ var ScrollBar = function(options)
 		throw "Illegal scrollbar direction: " + my.direction;
 	}
 
-	my.scroller.on('dragend', function(move){
 
+	my.emitOnScroll = function()
+	{
 		if(my.direction == 'horizontal')
 		{
-			if(xmax() == xmin())return;
 			my.onScroll({
 				pos: my.getPos(),
 				value: my.minValue + my.getPos() * (my.maxValue- my.minValue),
@@ -163,7 +163,6 @@ var ScrollBar = function(options)
 		}
 		else if(my.direction == 'vertical')
 		{
-			if(ymax() == ymin())return;
 			my.onScroll({
 				pos: my.getPos(),
 				value: my.minValue + my.getPos() * (my.maxValue- my.minValue),
@@ -171,6 +170,28 @@ var ScrollBar = function(options)
 			});
 		}
 		my.old_px_pos = my.px_pos;
+	};
+
+	my.setValue = function(v)
+	{
+		var p;
+
+		if(v > my.maxValue)p=1;
+		else if(v < my.minValue)p=0;
+		else
+		{
+			p = (v - my.minValue)/(my.maxValue - my.minValue);
+		}
+
+		my.setPos(p);
+		my.emitOnScroll();
+	};
+
+	my.scroller.on('dragend', function(move){
+
+		if(my.direction == 'horizontal' && xmax() == xmin())return;
+		else if(my.direction == 'vertical' && ymax() == ymin())return;
+		else my.emitOnScroll();
 	});
 
 	my.layer.add(my.rect);

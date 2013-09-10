@@ -4,9 +4,9 @@ var PatternView = function(options)
 
 	my.updatePenSize = function()
 	{
-		my.penSize = my.penMeasuresCount * my.model.beatsPerMeasure * my.model.notesPerBeat
-					+ my.penBeatsCount * my.model.notesPerBeat
-					+ my.penNotesCount;
+		my.penSize = my.model.viewData.penMeasuresCount * my.model.beatsPerMeasure * my.model.notesPerBeat
+					+ my.model.viewData.penBeatsCount * my.model.notesPerBeat
+					+ my.model.viewData.penNotesCount;
 
 	};
 
@@ -26,13 +26,7 @@ var PatternView = function(options)
 		my.verticalScrollBarMargin = 3;
 		my.noteHeight = 15;
 		my.measureWidth = (my.width - my.verticalScrollBarWidth - 2*my.verticalScrollBarMargin - my.infoWidth)/4;
-		
-		my.penMeasuresCount = options.penMeasuresCount || 0;
-		my.penBeatsCount = options.penBeatsCount || 1;
-		my.penNotesCount = options.penNotesCount || 0;
-
-		my.penSize = 1;
-
+	
 		my.stage = options.stage;
 		
 	};
@@ -52,9 +46,9 @@ var PatternView = function(options)
 		]});
 		my.stage.add(my.layer);
 		my.stage.add(my.gridLayer);
-		
+
 		my.model = track;
-		my.penSize = my.penSize || my.model.notesPerBeat; 
+	
 		my.setupUI();
 	};
 
@@ -77,8 +71,16 @@ var PatternView = function(options)
 				clip.y += move.delta;
 				my.gridLayer.setClip(clip);
 				my.gridLayer.draw();
+
+				my.model.viewData.vScrollSemitone = Math.ceil(12*(my.model.maxOctave - my.model.minOctave + 1) + my.gridLayer.getY() / my.noteHeight);
 			}
 		});
+
+		if(my.model.viewData.vScrollSemitone !== undefined)
+		{
+			 var scrollTo = -(my.model.viewData.vScrollSemitone - 12*(my.model.maxOctave - my.model.minOctave + 1)) * my.noteHeight;
+			 my.verticalScrollBar.setValue(scrollTo);
+		}
 
 		my.horizontalScrollBar = new ScrollBar({
 			direction: 'horizontal',
@@ -95,8 +97,16 @@ var PatternView = function(options)
 				clip.x += move.delta;
 				my.gridLayer.setClip(clip);
 				my.gridLayer.draw();
+
+				my.model.viewData.hScrollNotes = Math.floor(-my.gridLayer.getX() / my.measureWidth * my.model.notesPerBeat * my.model.beatsPerMeasure);
 			}
 		});
+
+		if(my.model.viewData.hScrollNotes !== undefined)
+		{
+			var scrollTo = my.model.viewData.hScrollNotes * my.measureWidth / my.model.notesPerBeat / my.model.beatsPerMeasure;
+			my.horizontalScrollBar.setValue(scrollTo);
+		}
 
 		var menuX = my.x + my.verticalScrollBarWidth + 2*my.verticalScrollBarMargin;
 		var menuY = my.y + my.menuMargin;
@@ -183,9 +193,9 @@ var PatternView = function(options)
 			rect.setFill('#33CCFF');
 			my.penMeasures = rect;
 			my.layer.draw();
-			my.penMeasuresCount = i;
+			my.model.viewData.penMeasuresCount = i;
 			my.updatePenSize();
-		}, function(i, rect){if(i == my.penMeasuresCount){rect.setFill('#33CCFF'); my.penMeasures = rect;}});
+		}, function(i, rect){if(i == my.model.viewData.penMeasuresCount){rect.setFill('#33CCFF'); my.penMeasures = rect;}});
 		drawButtons(my.model.beatsPerMeasure, '#FFCC33', function(i, rect, rects){
 			if(my.penBeats)
 			{
@@ -195,9 +205,9 @@ var PatternView = function(options)
 			rect.setFill('#33CCFF');
 			my.penBeats = rect;
 			my.layer.draw();
-			my.penBeatsCount = i;
+			my.model.viewData.penBeatsCount = i;
 			my.updatePenSize();
-		}, function(i, rect){if(i == my.penBeatsCount){rect.setFill('#33CCFF'); my.penBeats = rect;}});
+		}, function(i, rect){if(i == my.model.viewData.penBeatsCount){rect.setFill('#33CCFF'); my.penBeats = rect;}});
 		drawButtons(my.model.notesPerBeat, '#FF6633', function(i, rect, rects){
 			if(my.penNotes)
 			{
@@ -207,9 +217,9 @@ var PatternView = function(options)
 			rect.setFill('#33CCFF');
 			my.penNotes = rect;
 			my.layer.draw();
-			my.penNotesCount = i;
+			my.model.viewData.penNotesCount = i;
 			my.updatePenSize();
-		}, function(i, rect){if(i == my.penNotesCount){rect.setFill('#33CCFF'); my.penNotes = rect;}});
+		}, function(i, rect){if(i == my.model.viewData.penNotesCount){rect.setFill('#33CCFF'); my.penNotes = rect;}});
 
 		/*
 		* Happily draw the grid, bear with me
