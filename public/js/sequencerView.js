@@ -27,12 +27,33 @@ var SequencerView = function(options){
 		my.layer.add(leftPanel);
 		my.layer.add(tracksPanel);
 
-		var n = 0;
+		/*
+		* Determine ordering of tracks
+		* messy because some tracks may not have a position yet
+		* so we need to give them one
+		* without de-ordering the others
+		*/
+
+		var positions_a = [];
+		var positions_h = {};
+
+		var p = -1;
 		for(var i in tracks)
 		{
-			var track = my.addTrack({id: n, position: n, name: tracks[i].name, model: tracks[i]});
-			my.drawTrack(track);
-			n += 1;
+			var position = tracks[i].viewData.trackPosition;
+			if(position === undefined)position = p--;
+			positions_a.push(position);
+			positions_h[position] = tracks[i];
+		}
+
+		// Positions need to start at 0
+		p = 0;
+		positions_a.sort();
+		for(var i in positions_a)
+		{
+			var model = positions_h[positions_a[i]];
+			model.viewData.trackPosition = p++;
+			my.addTrack(model);
 		}
 
 		/*
@@ -90,10 +111,15 @@ var SequencerView = function(options){
 		my.scoresLayer.draw();
 	};
 
-	my.addTrack = function(options)
+	my.addTrack = function(track)
 	{
-		var t = new TrackView(options);
-		my.tracks[options.id] = t;
+		var t = new TrackView(track);
+		my.tracks[track.name] = t;
+		my.drawTrack(t);
+		for(var s in track.segments)
+		{
+			my.drawSegment(t, parseInt(s), track.segments[s]);
+		}
 		return t;
 	};
 
@@ -108,9 +134,9 @@ var SequencerView = function(options){
 
 		for(var i in my.tracks)
 		{
-			if(my.tracks[i].position > t.position)
+			if(my.tracks[i].model.viewData.trackPosition > t.model.viewData.trackPosition)
 			{
-				my.tracks[i].position -= 1;
+				my.tracks[i].model.viewData.trackPosition -= 1;
 			}
 		}
 
@@ -126,8 +152,8 @@ var SequencerView = function(options){
 
 	my.drawTrack = function(track)
 	{
-		var position = my.computeTrackPos(track);
 
+		var position = my.computeTrackPos(track);
 		track.handleGroup = new Kinetic.Group();
 
 		track.handle = new Kinetic.Rect({
@@ -144,19 +170,7 @@ var SequencerView = function(options){
 
 		track.handle.on('click', function(){
 			
-			if(track != my.focusedTrack)
-			{
-				if(my.focusedTrack)
-				{
-					my.focusedTrack.handle.setFill(my.focusedTrack.handle.oldFill);
-				}
-				track.handle.setFill('white');
-
-				my.handlesLayer.draw();
-
-				my.focusedTrack = track;
-				my.onTrackFocused();
-			}
+			my.setFocusedTrack(track);
 			
 		});
 
@@ -207,7 +221,7 @@ var SequencerView = function(options){
 				16,
 				function(img){
 					img.on('click', function(){
-						my.removeTrack(track.id);
+						my.removeTrack(track.model.name);
 					});
 				}
 		);
@@ -224,7 +238,7 @@ var SequencerView = function(options){
 				16,
 				function(img){
 					img.on('click', function(){
-						my.moveTrack(track.id, -1);
+						my.moveTrack(track.model.name, -1);
 					});
 				}
 		);
@@ -241,7 +255,7 @@ var SequencerView = function(options){
 				16,
 				function(img){
 					img.on('click', function(){
-						my.moveTrack(track.id, 1);
+						my.moveTrack(track.model.name, 1);
 					});
 				}
 		);
@@ -300,25 +314,7 @@ var SequencerView = function(options){
 			var callback = (function(j){return function(){
 				if(track.canAddSegmentAt(j))
 				{
-					track.addSegmentAt(j);
-					var seg = new Kinetic.Rect({
-						x: track.measures[j].getPosition().x,
-						y: track.measures[j].getPosition().y - 1,
-						width: track.getMeasureCount() * (my.measureWidth + 2*my.measureMargin) - 2*my.measureMargin,
-						height: my.trackHeight,
-						fill: 'green',
-						opacity: 0.7,
-						stroke: 'black',
-						strokeWidth: 2
-					});
-					track.scoreGroup.add(seg);
-					my.scoresLayer.draw();
-
-					seg.on("click", function(){
-						track.removeSegmentAt(j);
-						seg.remove();
-						my.scoresLayer.draw();
-					});
+					my.addSegment(track, j);
 				}
 			}})(i);
 			rect.on('click', callback);
@@ -343,11 +339,39 @@ var SequencerView = function(options){
 		
 	};
 
+	my.drawSegment = function(track, j, len)
+	{
+		var seg = new Kinetic.Rect({
+			x: track.measures[j].getPosition().x,
+			y: track.measures[j].getPosition().y - 1,
+			width: len * (my.measureWidth + 2*my.measureMargin) - 2*my.measureMargin,
+			height: my.trackHeight,
+			fill: 'green',
+			opacity: 0.7,
+			stroke: 'black',
+			strokeWidth: 2
+		});
+		track.scoreGroup.add(seg);
+		my.scoresLayer.draw();
+
+		seg.on("click", function(){
+			track.removeSegmentAt(j);
+			seg.remove();
+			my.scoresLayer.draw();
+		});
+	};
+
+	my.addSegment = function(track, j)
+	{
+		track.addSegmentAt(j);
+		my.drawSegment(track, j, track.getMeasureCount());
+	};
+
 	my.computeTrackPos = function(track, num)
 	{
 		if(num === undefined)
 		{
-			num = track.id;
+			num = track.model.viewData.trackPosition;
 		}
 
 		return {
@@ -380,10 +404,10 @@ var SequencerView = function(options){
 		var track = my.tracks[id];
 		for(var i in my.tracks)
 		{
-			if(my.tracks[i].position == track.position + delta)
+			if(my.tracks[i].model.viewData.trackPosition == track.model.viewData.trackPosition + delta)
 			{
-				track.position += delta;
-				my.tracks[i].position -= delta;
+				track.model.viewData.trackPosition += delta;
+				my.tracks[i].model.viewData.trackPosition -= delta;
 				break;
 			}
 		}
@@ -394,7 +418,7 @@ var SequencerView = function(options){
 	my.redrawTrack = function(id)
 	{
 		var track = my.tracks[id];
-		var pos   = my.computeTrackPos(track, track.position);
+		var pos   = my.computeTrackPos(track);
 
 		var trackPos  = track.score.getAbsolutePosition();
 		var handlePos = track.handle.getAbsolutePosition();
@@ -457,8 +481,31 @@ var SequencerView = function(options){
 
 		my.tracks = {};
 
-		my.setupUI(options.tracks);
+		my.setupUI(options.song.tracks);
+
+		for(var i in my.tracks)
+		{
+			my.setFocusedTrack(my.tracks[i]);
+			break;
+		}
 	}
+
+	my.setFocusedTrack = function(track)
+	{
+		if(track != my.focusedTrack)
+		{
+			if(my.focusedTrack)
+			{
+				my.focusedTrack.handle.setFill(my.focusedTrack.handle.oldFill);
+			}
+			track.handle.setFill('white');
+
+			my.handlesLayer.draw();
+
+			my.focusedTrack = track;
+			my.onTrackFocused();
+		}
+	};
 
 	my.onTrackFocused = function()
 	{
@@ -473,14 +520,12 @@ var SequencerView = function(options){
 	
 };
 
-var TrackView = function(options)
+var TrackView = function(track)
 {
 	var my = this;
-	my.id = options.id;
 
-	my.model 	= options.model;
-	my.position = options.position;
-
+	my.model 	= track;
+	
 	my.measures = {};
 
 	my.canAddSegmentAt = function(i)
