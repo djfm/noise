@@ -54,7 +54,17 @@ div.preset-actions a
 
 .nomargin
 {
-	margin: 0;
+	margin: 0px;
+}
+
+.no-margin-bottom
+{
+	margin-bottom: 0px;
+}
+
+form.custom .custom.dropdown.no-margin-bottom
+{
+	margin-bottom: 0px;
 }
 
 .nopadding
@@ -71,4 +81,11 @@ button#new-preset
 div.settings label
 {
 	font-size: 1em;
+}
+
+select.zurb
+{
+	height: 33px;
+	background-color: #CCC;
+	border-color: #BBB;
 }

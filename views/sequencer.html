@@ -5,8 +5,8 @@
 		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/foundation.min.css"></link>
 		<script src="http://noise.fmdj.fr/assets/kinetic.min.js"></script>
 		<script src="http://noise.fmdj.fr/assets/angular.min.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/jquery.js"></script>
 		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/custom.modernizr.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/zepto.js"></script>
 		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
 		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.forms.js"></script>
 
@@ -16,6 +16,7 @@
 		<script src="/js/track.js"></script>
 		<script src="/js/patternView.js"></script>
 		<script src="/js/sequencerView.js"></script>
+		<script src="/js/sequencerController.js"></script>
 
 		<link rel="stylesheet" href="/css/main.css"></link>
 
@@ -24,24 +25,79 @@
 			div#pattern
 			{
 				height:400px;
-				border:1px solid #CCC;
-				margin:5px;
 			}
 			div#sequencer
 			{
 				height:400px;
-				border:1px solid #CCC;
-				margin:5px;
+			}
+			div#sequencer-preset-buttons
+			{
+				margin-top:5px;
+			}
+			div#sequencer-control-buttons
+			{
+				margin-top: 10px;
+				margin-bottom: 5px;
 			}
 		</style>
 	</head>
 
-	<body>
-		<div id="pattern">
-		</div>
-		<div id="sequencer">
+	<body ng-app>
+		<div class="row">
+			<div class="large-12 columns">
+				<div id="pattern">
+				</div>
+			</div>
 		</div>
 
+		<div ng-controller="SequencerController">
+			<div id="sequencer-control-buttons" class="row">
+				<div class="large-2 columns">
+					<a class="postfix button success no-margin-bottom" ng-click="addTrack()">Add Track</a>
+				</div>
+				
+			</div>
+
+			<div class="row">
+				<div class="large-12 columns">
+					<div id="sequencer">
+					</div>
+				</div>
+			</div>
+
+			<div id="sequencer-preset-buttons" class="row">
+				<div class="large-6 columns">
+					<div class="row collapse">
+						<form ng-submit="loadSong(load_name)">
+							<div class="large-4 columns">
+								<label for="load_name" class="prefix">Load song:</label>
+							</div>
+							<div class="large-5 columns">
+								<select class="zurb" id="load_name" ng-model="load_name" ng-options="k as k for (k, v) in songs"></select>
+							</div>
+							<div class="large-3 columns">
+								<button class="postfix success">Load!</a>
+							</div>
+						</form>
+					</div>
+				</div>
+				<div class="large-6 columns">
+					<div class="row collapse">
+						<form ng-submit="saveSongAs(save_as_name)">
+							<div class="large-4 columns">
+								<label for="save_as_name" class="prefix">Save song as:</label>
+							</div>
+							<div class="large-5 columns">
+								<input id="save_as_name" required ng-model='save_as_name' type="text" placeholder="Type name of preset here..."/>
+							</div>
+							<div class="large-3 columns">
+								<button class="postfix button">Save!</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
 
 		<script type="text/javascript">
 			
@@ -57,9 +113,19 @@
 				height: $('#sequencer').innerHeight(),
 			});
 
-			var song = new Song({
+			/*var song = new Song({
+				name: 'untitled',
 				tracks: [new Track({name: "Piano"}), new Track({name: "Guitar"}), new Track({name: "Bass"})]
-			});
+			});*/
+
+			var songs = JSON.parse(localStorage.getItem('songs')) || {'untitled': new Song({name: 'untitled'}).serialize()};
+
+			var song;
+			for(var s in songs)
+			{
+				song = songs[s];
+				break;
+			}
 
 			//song = Song.deserialize(song.serialize());
 
@@ -69,12 +135,11 @@
 				height: patternStage.getHeight(),
 			});
 
-
 			var sequencerView = new SequencerView({
 				stage: sequencerStage,
 				width: sequencerStage.getWidth(),
 				height: sequencerStage.getHeight(), 
-				song: song,
+				song: Song.deserialize(song),
 				patternView: patternView
 			});
 

@@ -4,6 +4,45 @@ var SequencerView = function(options){
 
 	my.setupUI = function(tracks)
 	{
+
+		if(my.layer)
+		{
+			my.layer.remove();
+		}
+
+		if(my.handlesLayer)
+		{
+			my.handlesLayer.remove();
+		}
+
+		if(my.scoresLayer)
+		{
+			my.scoresLayer.remove();
+		}
+
+		my.layer = new Kinetic.Layer();
+
+		my.handlesLayer = new Kinetic.Layer({clip: [
+			my.x + my.trackMargin,
+			my.y + my.trackMargin,
+			my.leftPanelWidth - 2*my.trackMargin,
+			my.height - 2*my.trackMargin
+		]});
+
+		my.scoresLayer  = new Kinetic.Layer({clip:[
+			my.x + my.leftPanelWidth + my.leftPanelMargin + my.trackMargin,
+			my.y + my.trackMargin,
+			my.width - my.leftPanelWidth - my.leftPanelMargin - 2*my.trackMargin,
+			my.height - my.horizontalScrollBarHeight - 2*my.horizontalScrollBarMargin - 2*my.trackMargin
+		]});
+
+		my.stage = options.stage;
+		my.stage.add(my.layer);
+		my.stage.add(my.handlesLayer);
+		my.stage.add(my.scoresLayer);
+
+		my.tracks = {};
+
 		var leftPanel = new Kinetic.Rect({
 			x: my.x,
 			y: my.y,
@@ -113,6 +152,20 @@ var SequencerView = function(options){
 
 	my.addTrack = function(track)
 	{
+		if(track.viewData.trackPosition === undefined)
+		{
+			track.viewData.trackPosition = Object.keys(my.tracks).length;
+		}
+
+		var n = 1;
+		var name = track.name;
+		while(my.tracks[track.name])
+		{
+			track.name = name + " (" + n++ + ")";
+		}
+
+		my.song.tracks[track.name] = track;
+
 		var t = new TrackView(track);
 		my.tracks[track.name] = t;
 		my.drawTrack(t);
@@ -120,6 +173,9 @@ var SequencerView = function(options){
 		{
 			my.drawSegment(t, parseInt(s), track.segments[s]);
 		}
+
+		my.updateVerticalScrollBar();
+
 		return t;
 	};
 
@@ -142,8 +198,16 @@ var SequencerView = function(options){
 
 		my.redrawTracks();
 
-		my.verticalScrollBar.setMaxValue(my.tracksHeight() - my.height + 2*my.trackMargin);
+		my.updateVerticalScrollBar();
 	}
+
+	my.updateVerticalScrollBar = function()
+	{
+		if(my.verticalScrollBar)
+		{
+			my.verticalScrollBar.setMaxValue(my.tracksHeight() - my.height + 2*my.trackMargin);
+		}
+	};
 
 	my.tracksHeight = function()
 	{
@@ -336,6 +400,7 @@ var SequencerView = function(options){
 		}
 
 		my.scoresLayer.add(track.scoreGroup);
+		my.scoresLayer.draw();
 		
 	};
 
@@ -458,30 +523,14 @@ var SequencerView = function(options){
 
 		my.patternView = options.patternView;
 
-		my.layer = new Kinetic.Layer();
+		my.setSong(options.song);
+	}
 
-		my.handlesLayer = new Kinetic.Layer({clip: [
-			my.x + my.trackMargin,
-			my.y + my.trackMargin,
-			my.leftPanelWidth - 2*my.trackMargin,
-			my.height - 2*my.trackMargin
-		]});
+	my.setSong = function(song)
+	{
+		my.song = song;
 
-		my.scoresLayer  = new Kinetic.Layer({clip:[
-			my.x + my.leftPanelWidth + my.leftPanelMargin + my.trackMargin,
-			my.y + my.trackMargin,
-			my.width - my.leftPanelWidth - my.leftPanelMargin - 2*my.trackMargin,
-			my.height - my.horizontalScrollBarHeight - 2*my.horizontalScrollBarMargin - 2*my.trackMargin
-		]});
-
-		my.stage = options.stage;
-		my.stage.add(my.layer);
-		my.stage.add(my.handlesLayer);
-		my.stage.add(my.scoresLayer);
-
-		my.tracks = {};
-
-		my.setupUI(options.song.tracks);
+		my.setupUI(my.song.tracks);
 
 		for(var i in my.tracks)
 		{

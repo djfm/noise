@@ -284,7 +284,7 @@ var PatternView = function(options)
 
 				rect.on('click', (function(i, noteName, semitone){
 					return function(event){
-						var nth = Math.floor((event.x - event.targetNode.getAbsolutePosition().x) / my.measureWidth * my.model.notesPerBeat * my.model.beatsPerMeasure);
+						var nth = Math.floor((event.layerX - event.targetNode.getAbsolutePosition().x) / my.measureWidth * my.model.notesPerBeat * my.model.beatsPerMeasure);
 						my.onGridClicked({
 							note: nth,
 							octave: i,
