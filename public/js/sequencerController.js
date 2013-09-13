@@ -24,4 +24,16 @@ var SequencerController = function($scope)
 		sequencerView.setSong(Song.deserialize($scope.songs[name]));
 		$scope.save_as_name = name;
 	};
+
+	$scope.currentTime = 0;
+	$scope.measureDuration = 4000;
+
+	$scope.playSong = function()
+	{
+		var song = sequencerView.song;
+		for(var t in song.tracks)
+		{
+			song.tracks[t].play($scope.currentTime, $scope.measureDuration);
+		}
+	}
 };

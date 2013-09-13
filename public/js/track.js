@@ -13,6 +13,8 @@ var Track = function(options)
 
 	my.notes = {};
 
+	my.instrument = options.instrument || new DummyInstrument();
+
 	my.viewData = {
 		penMeasuresCount: options.penMeasuresCount || 0,
 		penBeatsCount: options.penBeatsCount || 1,
@@ -85,5 +87,49 @@ var Track = function(options)
 		{
 			delete my.notes[pos][semitone];
 		}
-	}
+	};
+
+	my.play = function(startAt, measureDuration)
+	{	
+		my.handles = [];
+
+		var noteDuration = measureDuration/(my.beatsPerMeasure*my.notesPerBeat);
+
+		for(var s in my.segments)
+		{
+			var segmentTime = parseInt(s) * measureDuration;
+			
+			for(var n in my.notes)
+			{
+				var noteTime = segmentTime 
+					+ parseInt(n) * noteDuration;
+
+				if(noteTime >= startAt)
+				{
+					for(var h in my.notes[n])
+					{
+						var semitone = parseInt(h);
+						var durationInNotes = my.notes[n][h];
+
+						var duration = durationInNotes * noteDuration;
+
+						var offset = semitone % 12;
+						var octave = (semitone - offset) / 12;
+						var freq   = NoteFreqs[NoteNames[offset]] * Math.pow(2, octave);
+
+						//console.log("Queuing freq", freq+"Hz at", noteTime+'ms', "for", duration+'ms');
+						
+						var play   = (function(freq, duration){
+							return function(){
+								console.log(freq, duration);
+							};
+						})(freq, duration);
+
+						var handle = setTimeout(play, noteTime);
+						my.handles.push(handle);
+					}
+				}
+			}
+		}
+	};
 };

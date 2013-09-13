@@ -17,6 +17,7 @@
 		<script src="/js/patternView.js"></script>
 		<script src="/js/sequencerView.js"></script>
 		<script src="/js/sequencerController.js"></script>
+		<script src="/js/dummyInstrument.js"></script>
 
 		<link rel="stylesheet" href="/css/main.css"></link>
 
@@ -53,7 +54,13 @@
 		<div ng-controller="SequencerController">
 			<div id="sequencer-control-buttons" class="row">
 				<div class="large-2 columns">
-					<a class="postfix button success no-margin-bottom" ng-click="addTrack()">Add Track</a>
+					<a class="postfix button no-margin-bottom" ng-click="addTrack()">Add Track</a>
+				</div>
+				<div class="large-2 columns">
+					<a class="postfix button success no-margin-bottom" ng-click="playSong()">Play song!</a>
+				</div>
+				<div class="large-8 columns">
+					&nbsp;
 				</div>
 				
 			</div>
