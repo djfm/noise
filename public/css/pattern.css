@@ -1,0 +1,59 @@
+div.measure
+{
+	display: inline-block;
+	border-left: 2px solid black;
+}
+div.beat
+{
+	display: inline-block;
+	border-left: 1px solid #ccc;
+	margin-left: -1px;
+}
+div.note
+{
+	display: inline-block;
+	width:30px;
+	border-left: 1px solid #eee;
+	border-bottom: 1px solid #ccc;
+	margin-left: -1px;
+}
+
+div.C
+{
+	background-color: #CCC;
+}
+
+div.E
+{
+	background-color: #DDD;
+}
+
+div.G
+{
+	background-color: #EEE;
+}
+
+div.clear
+{
+	clear: both;
+}
+div.pattern-view
+{
+	max-height: 400px;
+	overflow: auto;
+	padding: 5px;
+	white-space: nowrap;
+}
+div.semitone-row
+{
+	display: table;
+}
+
+div.mark
+{
+	border: 1px solid black;
+	margin: -1px;
+	background-color: #00F53D;
+	position: relative;
+	display: inline-block;
+}

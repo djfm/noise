@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+
+		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/normalize.css"></link>
+		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/foundation.min.css"></link>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/custom.modernizr.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/zepto.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.forms.js"></script>
+
+		<script src="/js/vendor/angular.js"></script>
+
+		<script src="/js/solfege.js"></script>
+		<script src="/js/components.js"></script>
+		<script src="/js/song.js"></script>
+		<script src="/js/track.js"></script>
+		<script src="/js/patternController.js"></script>
+
+
+		<link rel="stylesheet" href="/css/main.css"></link>
+		<link rel="stylesheet" href="/css/pattern.css"></link>	
+	</head>
+
+	<body ng-app>
+		<div class="row">
+				<div class="pattern-view" ng-controller="PatternController">
+					<div ng-repeat="row in semitones" class="semitone-row {{row.noteName}}">
+						<div ng-repeat="measure in measures" class="measure">
+							<div ng-repeat="beat in beats" class="beat">
+								<div ng-repeat="note in notes" class="note" ng-click="gridClicked($event, row.semitone, measure.n, beat.n, note.n)">
+									<div ng-switch on="pattern.notes[measure.n*pattern.beatsPerMeasure*pattern.notesPerBeat+beat.n*pattern.notesPerBeat+note.n][row.semitone]">
+										<div ng-switch-when="undefined">
+											&nbsp;
+										</div>
+										<div ng-switch-default>
+											bob
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+
+		<script type="text/javascript">
+			
+		</script>
+
+	</body>
+</html>

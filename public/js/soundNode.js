@@ -1,5 +1,7 @@
 var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+var nodes_created = 0;
+
 var soundNode = function(options)
 {
 	this.inputs 	= {};
@@ -81,7 +83,17 @@ var soundNode = function(options)
 		}
 		else if(this.node_type == 'output')
 		{
-			return audioContext.destination;
+			nodes_created += 1;
+
+			var kill = getKillNode(audioContext, function(){
+				kill.disconnect();
+				nodes_created -= 1;
+			});
+
+
+			kill.connect(audioContext.destination);
+
+			return kill;
 		}
 		else
 		{

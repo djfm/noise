@@ -268,6 +268,7 @@ var instrumentController = function($scope)
 			osc.start(0);
 		}
 
+		/*
 		setTimeout(function(){
 			for(var conn in instr.connections)
 			{
@@ -278,7 +279,9 @@ var instrumentController = function($scope)
 			{
 				instr.oscillators[o].stop(0);
 			}
-		}, 5000);
+		}, 5000);*/
+
+		
 
 	};
 

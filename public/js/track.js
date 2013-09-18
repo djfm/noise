@@ -13,7 +13,7 @@ var Track = function(options)
 
 	my.notes = {};
 
-	my.instrument = options.instrument || new DummyInstrument();
+	my.instrument = options.instrument;
 
 	my.viewData = {
 		penMeasuresCount: options.penMeasuresCount || 0,
@@ -121,7 +121,7 @@ var Track = function(options)
 						
 						var play   = (function(freq, duration){
 							return function(){
-								console.log(freq, duration);
+								my.playSound(freq, duration);
 							};
 						})(freq, duration);
 
@@ -132,4 +132,32 @@ var Track = function(options)
 			}
 		}
 	};
+
+	my.playSound  = function(freq, duration)
+	{
+		//console.log("Playing sound at ", freq+"Hz", "for", duration+"ms");
+
+		var instrument = new TestStrument(audioContext);
+
+		var killNode = getKillNode(audioContext, function(kill){
+			instrument.clean();
+			kill.disconnect();
+		});
+
+		instrument.getOutput().connect(killNode);
+		killNode.connect(audioContext.destination);
+
+		instrument.play(freq, duration);
+
+		setTimeout(function(){
+			instrument.stop();
+		}, duration);
+
+	};
+
+	my.octaveCount = function()
+	{
+		return my.maxOctave - my.minOctave + 1;
+	}
+
 };

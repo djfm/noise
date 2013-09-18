@@ -1,146 +1,67 @@
-<html>
+<!DOCTYPE html>
 
+<html>
 	<head>
+
 		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/normalize.css"></link>
 		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/foundation.min.css"></link>
-		<script src="http://noise.fmdj.fr/assets/kinetic.min.js"></script>
-		<script src="http://noise.fmdj.fr/assets/angular.min.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/jquery.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/custom.modernizr.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.forms.js"></script>
-
+		
 		<link rel="stylesheet" href="/css/main.css"></link>
+
+
+
+
+		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/custom.modernizr.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/zepto.js"></script>
+		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
+		<script src="http://noise.fmdj.fr/assets/kinetic.min.js"></script>
+		<script src="/js/vendor/angular.js"></script>
+
+		<script src="/js/solfege.js"></script>
+		<script src="/js/kinetic/util.js"></script>
+		<script src="/js/components.js"></script>
+		<script src="/js/song.js"></script>
+		<script src="/js/track.js"></script>
+
+		<script src="/js/pattern/view.js"></script>
+
+		<style type="text/css">
+			div#pattern-view-container
+			{
+				overflow: auto;
+				max-height: 400px;
+			}
+		</style>
+
 	</head>
 
-	<body ng-app ng-controller="instrumentController">
+	<body ng-app>
 		<div class="row">
-			<div class="large-6 columns">
-				<h2>Instrument</h2>
-				<div id="instrument"></div>
-			</div>
-			<div class="large-6 columns">
-				<div class="row">
-					<div class="large-12 columns">
-						<h2>Instrument Settings</h2>
-					</div>
-				</div>
-				<div class="row">
-					<div class="large-6 columns">
-						<div class="row">
-							<div class="large-12 columns">
-								<h3>Node stuffz</h3>
-								<button class="tiny" ng-click="addNode(node_type)">Add node:</button>
-								<select class="inline" ng-model='node_type'>
-									<option value="oscillator">Oscillator</option>
-									<option value="gain">Gain</option>
-									<option value="delay">Delay</option>
-									<option value="envelope">Envelope</option>
-									<option value="filter">Filter</option>
-									<option value="output">Output</option>
-								</select>
-							</div>
-						</div>
-						<div class="row" ng-repeat="input in node_controls.inputs">
-							<div class="large-12 columns settings">
-								<label>{{input.name}}:</label>
-								<input ng-model="node_settings[input.name]" ng-change="updateNodeSettings(input.name, node_settings[input.name])" type="{{input.type}}"/>
-							</div>
-						</div>
-						<div class="row" ng-repeat="select in node_controls.selects">
-							<div class="large-12 columns settings">
-								<label>{{select.name}}:</label>
-								<select ng-model="node_settings[select.name]" ng-change="updateNodeSettings(select.name, node_settings[select.name])" ng-options="k as v for (k,v) in select.options">
-								</select>
-							</div>
-						</div>
-					</div>
-					<div class="large-6 columns">
-						<div class="row"><div class="large-12 columns"><h3>Presets</h3></div></div>
-						<div ng-repeat="(preset, unused) in presets" class="row">
-							<div class="large-12 columns">
-								<div class="preset active_{{(preset==current_preset)}}">
-									{{preset}}
-									<div class="preset-actions">
-										(<a ng-click='loadPreset(preset)'>load</a>|<a ng-click='savePreset(preset)'>save</a>|<a ng-click='deletePreset(preset)'>delete</a>)
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="row">
-							<div class="large-12 columns">
-								<hr/>
-								<form ng-submit="newPreset(new_preset_name)">
-									<button id="new-preset" class="tiny success">New preset</button>
-									<input ng-model="new_preset_name" required type="text"></input>
-									Please type name of the preset to be created above!
-								</form>
-							</div>
-						</div>
-					</div>
+			<div class="large-12 columns">
+				<div id="pattern-view-container">
 				</div>
 			</div>
 		</div>
-		<div class="row">
-			<div class="large-6 columns">
-				<div class="row" style="margin-top:15px">
-					<div class="large-12 columns">
-						<h2>Score</h2>
-						<textarea id="score" ng-model="score"></textarea>
-					</div>
-				</div>
-				<div class="row">
-					<div class="large-16 columns">
-						<button ng-click="play(score)">Play!</button>
-					</div>
-					<div class="large-16 columns">
-						<lebel>Tempo (ms):</label>
-						<input type="number" ng-model="dt"/>
-					</div>
-				</div>
-			</div>
-		</div>
-	</body>
 
-	
-
-	
-
-		
-		
 
 		<script type="text/javascript">
+			var song;
 
-			var freqs   = {
-				'C'		: 16.35,
-				'C#'	: 17.32,
-				'D'		: 18.35,
-				'D#'	: 19.45,
-				'E'		: 20.60,
-				'F'		: 21.83,
-				'F#'	: 23.12,
-				'G'		: 24.50,
-				'G#'	: 25.96,
-				'A'		: 27.50,
-				'A#'	: 29.14,
-				'B'		: 30.87
-			};
-
-			var getFreq = function(note, octave)
+			var songs = JSON.parse(localStorage.getItem('songs'));
+			for(var s in songs)
 			{
-				if(!octave)octave=4;
-
-				if(!freqs[note])return 0;
-
-				return freqs[note]*Math.pow(2, octave);
+				song = Song.deserialize(songs[s]);
+				break;
 			}
+
+			var patternView = new PatternView({
+				container: 'pattern-view-container',
+				model: song.tracks['default']
+			});
 
 		</script>
 
-		<script src="/js/soundNode.js"></script>
-		<script src="/js/nodeView.js"></script>
-		<script src="/js/instrumentController.js"></script>
+
 
 	</body>
-
 </html>
