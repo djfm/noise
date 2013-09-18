@@ -40,6 +40,11 @@ var PatternView = function(options)
 			this.layer.remove();
 		}
 
+		if(this.marksLayer)
+		{
+			this.marksLayer.remove();
+		}
+
 		if(this.selectionLayer)
 		{
 			this.selectionLayer.remove();
@@ -62,8 +67,10 @@ var PatternView = function(options)
 
 		this.stage.add(this.layer);
 
-		this.selectionLayer = new Kinetic.Layer();
+		this.marksLayer = new Kinetic.Layer();
+		this.stage.add(this.marksLayer);
 
+		this.selectionLayer = new Kinetic.Layer();
 		this.stage.add(this.selectionLayer);
 
 		this.draw();
@@ -149,7 +156,7 @@ var PatternView = function(options)
 						// Completely outside vertically
 						(mark.getY() + mark.getHeight() < e.topLeft.y)
 							||
-						(mark.getY() > e.topLeft.x + e.size.height)
+						(mark.getY() > e.topLeft.y + e.size.height)
 					)
 				)
 				{
@@ -180,7 +187,7 @@ var PatternView = function(options)
 
 		if(selectionChanged)
 		{
-			this.layer.draw();
+			this.marksLayer.draw();
 		}
 	};
 
@@ -193,7 +200,7 @@ var PatternView = function(options)
 				this.unselectMark(i, j, this.selection[i][j]);
 			}
 		}
-		this.layer.draw();
+		this.marksLayer.draw();
 	};
 
 	this.selectionStarted = function(e)
@@ -219,6 +226,7 @@ var PatternView = function(options)
 		this.drawGrid();
 
 		this.layer.draw();
+		this.marksLayer.draw();
 	};
 
 	this.drawGrid = function()
@@ -361,7 +369,7 @@ var PatternView = function(options)
 				my.selectMark(note, semitone, mark);
 				this.selectionId += 1;
 			}
-			my.layer.draw();
+			my.marksLayer.draw();
 		});
 
 		KineticUtil.onDrag(mark, {
@@ -377,8 +385,8 @@ var PatternView = function(options)
 
 		this.marks[note][semitone] = mark;
 
-		this.layer.add(mark);
-		this.layer.draw();
+		this.marksLayer.add(mark);
+		this.marksLayer.draw();
 	};
 
 	this.getNoteColor = function(name)
