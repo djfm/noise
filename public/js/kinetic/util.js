@@ -15,8 +15,8 @@ KineticUtil.onDrag = function(element, options)
 				y: Math.min(element.kineticUtil_dragStartedAt.y, event.layerY)
 			},
 			delta: {
-				x: event.layerX - element.kineticUtil_dragStartedAt.x,
-				y: event.layerY - element.kineticUtil_dragStartedAt.y
+				x: event.layerX - element.kineticUtil_lastPos.x,
+				y: event.layerY - element.kineticUtil_lastPos.y
 			},
 			size: {
 				width: Math.abs(element.kineticUtil_dragStartedAt.x - event.layerX),
@@ -28,6 +28,11 @@ KineticUtil.onDrag = function(element, options)
 
 	var dragStart = function(e)
 	{
+		if(options.relayFrom)
+		{
+			options.relayFrom.kineticUtil_dragRelayTo = element;
+		}
+
 		element.kineticUtil_lastPos = element.kineticUtil_dragStartedAt
 
 		if(options.onStart)
@@ -44,8 +49,22 @@ KineticUtil.onDrag = function(element, options)
 		}
 	};
 
+
+	var relay = function(e)
+	{
+		if(element.kineticUtil_dragRelayTo)
+		{
+			element.kineticUtil_dragRelayTo.fire(e.type, e);
+		}
+	};
+
 	var dragEnd = function(e)
 	{
+		if(options.relayFrom)
+		{
+			options.relayFrom.kineticUtil_dragRelayTo = undefined;
+		}
+
 		if(options.onEnd)
 		{
 			options.onEnd(info(e));
@@ -74,6 +93,8 @@ KineticUtil.onDrag = function(element, options)
 			}
 			e.cancelBubble = true;
 		}
+
+		relay(e);
 	});
 
 	element.on('mousemove', function(e){
@@ -86,10 +107,11 @@ KineticUtil.onDrag = function(element, options)
 			}
 			else
 			{
-				element.kineticUtil_lastPos = {x: e.layerX, y: e.layerY};
 				dragMove(e);
+				element.kineticUtil_lastPos = {x: e.layerX, y: e.layerY};
 			}
 		}
+		relay(e);
 	});
 
 	element.on('mouseup', function(e){
@@ -102,5 +124,9 @@ KineticUtil.onDrag = function(element, options)
 			element.kineticUtil_dragStartedAt 	= undefined;
 			element.kineticUtil_dragStatus 		= 0;
 		}
+
+		relay(e);
 	});
+
+
 };

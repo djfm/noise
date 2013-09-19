@@ -110,6 +110,10 @@ var PatternView = function(options)
 
 	this.selectMark = function(note, semitone, mark)
 	{
+		if(mark == undefined)
+		{
+			mark = my.marks[note][semitone];
+		}
 
 		mark.isSelected = true;
 		mark.previousOpacity = mark.getOpacity();
@@ -127,11 +131,25 @@ var PatternView = function(options)
 
 	this.unselectMark = function(note, semitone, mark)
 	{
+		if(mark == undefined)
+		{
+			if(my.selection[note])
+			{
+				mark = my.selection[note][semitone];
+			}
+		}
+
+		if(mark == undefined)
+		{
+			return;
+		}
+
 		mark.isSelected = false;
 		mark.setOpacity(mark.previousOpacity);
 		mark.setFill(mark.previousFill);
-		delete this.selection[note][semitone];
 		mark.selectionId = undefined;
+
+		delete my.selection[note][semitone];
 	};
 
 	this.computeSelection = function(e)
@@ -203,8 +221,25 @@ var PatternView = function(options)
 		this.marksLayer.draw();
 	};
 
+	this.setMarksListening = function(bool)
+	{
+		for(var i in this.marks)
+		{
+			for(var j in this.marks[i])
+			{
+				this.marks[i][j].setListening(bool);
+			}
+		}
+		// Changes to listening prop. are not
+		// taken into account until the layer is
+		// redrawn
+		this.marksLayer.draw();
+	};
+
 	this.selectionStarted = function(e)
 	{
+		this.setMarksListening(false);
+
 		if(!e.mouseEvent.ctrlKey)
 		{
 			this.clearSelection();
@@ -213,12 +248,15 @@ var PatternView = function(options)
 
 	this.selectionEnded = function(e)
 	{
+
 		this.selectionRect.remove();
 		this.selectionRect = undefined;
 
 		this.selectionLayer.draw();
 
 		this.selectionId += 1;
+
+		this.setMarksListening(true);
 	};
 
 	this.draw = function()
@@ -301,13 +339,20 @@ var PatternView = function(options)
 
 	};
 
+	this.getNoteAndSemitone = function(x, y)
+	{
+		return {
+			note: Math.floor(x / my.noteWidth),
+			semitone: (my.model.maxOctave + my.model.minOctave) * 12 - Math.ceil(y / my.noteHeight)
+		};
+	};
+
 	this.rowClicked = function(event)
 	{
 		if(event.button == 0)
 		{
-			var note 	 = Math.floor(event.layerX / my.noteWidth);
-			var semitone = (my.model.maxOctave + my.model.minOctave) * 12 - Math.ceil(event.layerY / my.noteHeight);
-			my.gridClicked(note, semitone);
+			var ns = my.getNoteAndSemitone(event.layerX, event.layerY);
+			my.gridClicked(ns.note, ns.semitone);
 		}
 	};
 
@@ -340,7 +385,7 @@ var PatternView = function(options)
 		var mark = new Kinetic.Rect({
 			x: tl.x+1,
 			y: tl.y,
-			width: this.penSize() * this.noteWidth - 1,
+			width: my.model.notes[note][semitone] * this.noteWidth - 1,
 			height: this.noteHeight - 1,
 			fill: 'blue',
 			opacity: 0.7,
@@ -352,13 +397,7 @@ var PatternView = function(options)
 		mark.on('click', function(e){
 			if(e.button == 2)
 			{
-				mark.remove();
-				my.model.removeNoteAt(note, semitone);
-				delete my.marks[note][semitone];
-				if(my.selection[note] && my.selection[note][semitone])
-				{
-					my.unselectMark(note, semitone, my.selection[note][semitone]);
-				}
+				my.removeNote(note, semitone, mark);
 			}
 			else if(e.button == 0)
 			{
@@ -373,9 +412,41 @@ var PatternView = function(options)
 		});
 
 		KineticUtil.onDrag(mark, {
-			onStart: function(){
-				console.log("hey!");
-			}
+			onStart: function(e){
+				if(e.mouseEvent.shiftKey)
+				{
+
+				}
+				else
+				{
+					my.movingSelection = true;
+					my.initiateSelectionMove();
+				}
+			},
+			onMove: function(e)
+			{	
+				if(my.movingSelection)
+				{
+					my.moveSelection(e);
+				}
+				else
+				{
+
+				}
+			},
+			onEnd: function(e)
+			{
+				if(my.movingSelection)
+				{
+					my.endSelectionMove(e);
+					my.movingSelection = false;
+				}
+				else
+				{
+					
+				}
+			},
+			relayFrom: my.layer
 		});
 
 		if(!this.marks[note])
@@ -389,6 +460,164 @@ var PatternView = function(options)
 		this.marksLayer.draw();
 	};
 
+	this.removeNote = function(note, semitone, mark)
+	{
+		if(mark == undefined)
+		{
+			mark = my.marks[note][semitone];
+		}
+
+		mark.remove();
+
+		my.model.removeNoteAt(note, semitone);
+		delete my.marks[note][semitone];
+
+		my.unselectMark(note, semitone);		
+	};
+
+	this.initiateSelectionMove = function(e)
+	{
+		my.setMarksListening(false);
+
+		my.eachSelectedMark(function(i, j, mark)
+		{
+			var shadow = new Kinetic.Rect({
+				x: mark.getX(),
+				y: mark.getY(),
+				width: mark.getWidth(),
+				height: mark.getHeight(),
+				fill: mark.getFill(),
+				opacity: 0.4,
+				stroke: 'black',
+				strokeWidth: 1
+			});
+
+			mark.moveShadow = shadow;
+			mark.freeMoveX  = mark.getX();
+			mark.freeMoveY  = mark.getY();
+
+			shadow.setListening(false);
+			my.selectionLayer.add(shadow);
+		});
+
+		my.selectionLayer.draw();
+	};
+
+	this.moveSelection = function(e)
+	{
+		var needDraw 	= false;
+		var dropAllowed = true;
+
+		my.eachSelectedMark(function(i, j, mark)
+		{
+			var shadow = mark.moveShadow;
+
+			mark.freeMoveX += e.delta.x;
+			mark.freeMoveY += e.delta.y;
+
+			var targetLogicalPos = my.getNoteAndSemitone(mark.freeMoveX, mark.freeMoveY);
+			var targetPos = my.noteTopLeft(targetLogicalPos.note, targetLogicalPos.semitone);
+
+			mark.targetLogicalPos = targetLogicalPos;
+
+			targetPos.x += 1;
+
+			if((mark.getX() != targetPos.x || mark.getY() != targetPos.y))
+			{
+				needDraw = true;
+			}
+
+			shadow.setPosition(targetPos);
+
+			// Check if we can drop
+			if(my.model.canAddNoteAt(
+					targetLogicalPos.note, 
+					targetLogicalPos.semitone,
+					my.model.notes[i][j],
+					my.selection
+				)
+			)
+			{
+				if(shadow.moveDropAllowed === false)
+				{
+					needDraw = true;
+					shadow.setFill(shadow.oldFill);
+				}
+				shadow.moveDropAllowed = true;
+			}
+			else
+			{
+				if(shadow.moveDropAllowed !== false)
+				{
+					needDraw = true;
+					shadow.oldFill = shadow.getFill();
+					shadow.setFill('red');
+				}
+				shadow.moveDropAllowed = false;
+				dropAllowed = false;
+			}
+		});
+
+		if(needDraw)
+		{
+			my.selectionLayer.draw();
+		}
+
+		my.selectionDropAllowed = dropAllowed;
+	};
+
+	this.endSelectionMove = function(e)
+	{
+		for(var i in my.selection)
+		{
+			for(var j in my.selection[i])
+			{
+				console.log(my.selection[i][j]);
+			}
+		}
+
+		var newSelection = {};
+
+		my.eachSelectedMark(function(i, j, mark)
+		{
+			mark.moveShadow.remove();
+			mark.moveShadow = undefined;
+			mark.freeMoveX  = undefined;
+			mark.freeMoveY  = undefined;
+
+			if(my.selectionDropAllowed)
+			{
+				var note = mark.targetLogicalPos.note;
+				var semitone = mark.targetLogicalPos.semitone;
+
+				var len = my.model.notes[i][j];
+				my.removeNote(i, j);
+
+				// Cant remove and add from the array we are looping on!!
+				if(!newSelection[note])
+				{
+					newSelection[note] = {};
+				}
+
+				newSelection[note][semitone] = len;
+			}
+
+		});
+
+		for(var i in newSelection)
+		{
+			for(var j in newSelection[i])
+			{
+				my.model.addNoteAt(i, j, newSelection[i][j]);
+				my.addNoteToViewAt(i, j);
+				my.selectMark(i, j);
+			}
+		}
+
+		my.selectionLayer.draw();
+		my.setMarksListening(true);
+	};
+
 	this.getNoteColor = function(name)
 	{
 		switch(name)
@@ -400,6 +629,16 @@ var PatternView = function(options)
 		}
 	};
 
+	this.eachSelectedMark = function(callback)
+	{
+		for(var i in my.selection)
+		{
+			for(var j in my.selection[i])
+			{
+				callback(i, j, my.selection[i][j]);
+			}
+		}
+	};
 
 	this.init(options);
 };
