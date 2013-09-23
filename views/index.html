@@ -10,20 +10,12 @@
 
 
 
-
+		<script src="/js/vendor/jquery-2.0.3.min.js"></script>
+		<script src="/js/vendor/jquery.scrollTo.min.js"></script>
 		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/custom.modernizr.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/zepto.js"></script>
 		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
 		<script src="http://noise.fmdj.fr/assets/kinetic.min.js"></script>
 		<script src="/js/vendor/angular.js"></script>
-
-		<script src="/js/solfege.js"></script>
-		<script src="/js/kinetic/util.js"></script>
-		<script src="/js/components.js"></script>
-		<script src="/js/song.js"></script>
-		<script src="/js/track.js"></script>
-
-		<script src="/js/pattern/view.js"></script>
 
 		<style type="text/css">
 			div#pattern-view-container
@@ -37,12 +29,29 @@
 
 	<body ng-app>
 		<div class="row">
-			<div class="large-12 columns">
+			<div class="large-10 columns">
 				<div id="pattern-view-container">
+				</div>
+			</div>
+			<div id="pattern-history-container" class="large-2 columns" ng-controller="PatternController">
+				<div class="row" ng-repeat = "h in history.history">
+					<div class="large-12 columns">
+						<div class="pattern-history" ng-click="loadHistoryItem(h)">
+							<span class="date">{{h.date}}</span>
+							<img src="{{h.image}}"></img>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
 
+		<script src="/js/solfege.js"></script>
+		<script src="/js/kinetic/util.js"></script>
+		<script src="/js/components.js"></script>
+		<script src="/js/song.js"></script>
+		<script src="/js/track.js"></script>
+		<script src="/js/history.js"></script>
+		<script src="/js/pattern/view.js"></script>
 
 		<script type="text/javascript">
 			var song;
@@ -54,14 +63,18 @@
 				break;
 			}
 
+			var history = new History();
+
 			var patternView = new PatternView({
 				container: 'pattern-view-container',
-				model: song.tracks['default']
+				model: song.tracks['default'],
+				history: history
 			});
 
 		</script>
 
-
+		
+		<script src="/js/pattern/controller.js"></script>
 
 	</body>
 </html>

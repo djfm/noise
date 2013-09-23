@@ -50,7 +50,7 @@ var Track = function(options)
 		delete my.segments[i];
 	};
 
-	my.canAddNoteAt = function(pos, semitone, len, except)
+	my.canAddNoteAt = function(pos, semitone, len, except, with_lengths)
 	{
 		if(len === undefined)len = my.notesPerBeat;
 
@@ -60,11 +60,17 @@ var Track = function(options)
 			var tlen;
 			if(tlen = my.notes[n][semitone])
 			{
+				if(with_lengths !== undefined && with_lengths[n] && with_lengths[n][semitone])
+				{
+					tlen = with_lengths[n][semitone];
+				}
+
 				// Don't care if note we check against is in except
 				if(!except || !except[n] || !except[n][semitone])
 				{
-					if((pos < t + tlen) && (t < pos + len))
+					if((parseInt(pos) < t + tlen) && (t < parseInt(pos) + len))
 					{
+						//console.log("Overlap with ", n, semitone, "args:", arguments);
 						return false;
 					}
 				}

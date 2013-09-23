@@ -9,6 +9,10 @@ var PatternView = function(options)
 		this.selection = {};
 		this.selectionId = 0;
 
+		this.history = options.history;
+
+		this._penSize = options.penSize || 4;
+
 		this.noteWidth  = options.noteWidth  || 30;
 		this.noteHeight = options.noteHeight || 18;
 
@@ -74,6 +78,8 @@ var PatternView = function(options)
 		this.stage.add(this.selectionLayer);
 
 		this.draw();
+
+		this.addModelNotesToView();
 	};
 
 	this.selectedAreaChanged = function(e)
@@ -249,6 +255,11 @@ var PatternView = function(options)
 	this.selectionEnded = function(e)
 	{
 
+		my.eachSelectedMark(function(i, j){
+			my.makeSnapshot();
+			return false;
+		});
+
 		this.selectionRect.remove();
 		this.selectionRect = undefined;
 
@@ -358,7 +369,7 @@ var PatternView = function(options)
 
 	this.penSize = function()
 	{
-		return 4;
+		return my._penSize;
 	};
 
 	this.noteTopLeft = function(note, semitone)
@@ -372,14 +383,19 @@ var PatternView = function(options)
 	{
 		if(this.model.canAddNoteAt(note, semitone, this.penSize()))
 		{
+			this.makeSnapshot();
 			this.model.addNoteAt(note, semitone, this.penSize());
-
 			this.addNoteToViewAt(note, semitone);
 		}
 	};
 
-	this.addNoteToViewAt = function(note, semitone)
+	this.addNoteToViewAt = function(note, semitone, options)
 	{
+		if(options === undefined)
+		{
+			options = {};
+		}
+
 		var tl = this.noteTopLeft(note, semitone);
 
 		var mark = new Kinetic.Rect({
@@ -397,10 +413,12 @@ var PatternView = function(options)
 		mark.on('click', function(e){
 			if(e.button == 2)
 			{
+				my.makeSnapshot();
 				my.removeNote(note, semitone, mark);
 			}
 			else if(e.button == 0)
 			{
+				my.makeSnapshot();
 				if(!e.ctrlKey)
 				{
 					my.clearSelection();
@@ -413,14 +431,18 @@ var PatternView = function(options)
 
 		KineticUtil.onDrag(mark, {
 			onStart: function(e){
-				if(e.mouseEvent.shiftKey)
-				{
 
+				var onTheEdge = Math.abs(e.current.x - mark.getX() - mark.getWidth()) < 10;
+				
+				if(e.mouseEvent.shiftKey || onTheEdge)
+				{
+					mark.isRootOfResizeOperation = true;
+					my.initiateSelectionResize(e);
 				}
 				else
 				{
 					my.movingSelection = true;
-					my.initiateSelectionMove();
+					my.initiateSelectionMove(e);
 				}
 			},
 			onMove: function(e)
@@ -431,7 +453,7 @@ var PatternView = function(options)
 				}
 				else
 				{
-
+					my.resizeSelection(e);
 				}
 			},
 			onEnd: function(e)
@@ -443,7 +465,7 @@ var PatternView = function(options)
 				}
 				else
 				{
-					
+					my.endSelectionResize();	
 				}
 			},
 			relayFrom: my.layer
@@ -457,7 +479,11 @@ var PatternView = function(options)
 		this.marks[note][semitone] = mark;
 
 		this.marksLayer.add(mark);
-		this.marksLayer.draw();
+
+		if(options.draw !== false)
+		{
+			this.marksLayer.draw();
+		}
 	};
 
 	this.removeNote = function(note, semitone, mark)
@@ -477,6 +503,8 @@ var PatternView = function(options)
 
 	this.initiateSelectionMove = function(e)
 	{
+		my.selectionMoveIsCopy = e.mouseEvent.ctrlKey;
+
 		my.setMarksListening(false);
 
 		my.eachSelectedMark(function(i, j, mark)
@@ -534,7 +562,7 @@ var PatternView = function(options)
 					targetLogicalPos.note, 
 					targetLogicalPos.semitone,
 					my.model.notes[i][j],
-					my.selection
+					(my.selectionMoveIsCopy ? undefined : my.selection)
 				)
 			)
 			{
@@ -568,15 +596,12 @@ var PatternView = function(options)
 
 	this.endSelectionMove = function(e)
 	{
-		for(var i in my.selection)
-		{
-			for(var j in my.selection[i])
-			{
-				console.log(my.selection[i][j]);
-			}
-		}
-
 		var newSelection = {};
+
+		if(my.selectionDropAllowed)
+		{
+			this.makeSnapshot();
+		}
 
 		my.eachSelectedMark(function(i, j, mark)
 		{
@@ -591,9 +616,17 @@ var PatternView = function(options)
 				var semitone = mark.targetLogicalPos.semitone;
 
 				var len = my.model.notes[i][j];
-				my.removeNote(i, j);
 
-				// Cant remove and add from the array we are looping on!!
+				if(my.selectionMoveIsCopy)
+				{
+					my.unselectMark(i, j);
+				}
+				else
+				{
+					my.removeNote(i, j);
+				}
+
+				// Can't both remove and add from the array we are looping on!!
 				if(!newSelection[note])
 				{
 					newSelection[note] = {};
@@ -601,6 +634,173 @@ var PatternView = function(options)
 
 				newSelection[note][semitone] = len;
 			}
+		});
+
+		for(var i in newSelection)
+		{
+			for(var j in newSelection[i])
+			{
+				my.model.addNoteAt(i, j, newSelection[i][j]);
+				my.addNoteToViewAt(i, j);
+				my.selectMark(i, j);
+			}
+		}
+
+		my.selectionLayer.draw();
+		my.setMarksListening(true);
+	};
+
+	this.initiateSelectionResize = function(e)
+	{
+		my.setMarksListening(false);
+
+		my.eachSelectedMark(function(i, j, mark)
+		{
+			var shadow = new Kinetic.Rect({
+				x: mark.getX(),
+				y: mark.getY(),
+				width: mark.getWidth(),
+				height: mark.getHeight(),
+				fill: 'green',
+				opacity: 1,
+				stroke: 'black',
+				strokeWidth: 1
+			});
+
+			mark.resizeShadow = shadow;
+			mark.originalWidth = mark.getWidth();
+			
+			shadow.setListening(false);
+			my.selectionLayer.add(shadow);
+		});
+
+		my.selectionLayer.draw();
+	};
+
+	this.resizeSelection = function(e)
+	{
+		var need_update = false;
+
+		var newLengths = {};
+
+		var ds = Math.floor((e.current.x - e.start.x)/my.noteWidth);
+		var dx = ds*my.noteWidth;
+
+		my.eachSelectedMark(function(i, j, mark)
+		{
+			
+			var newWidth = mark.originalWidth + dx;
+
+			if(newWidth > 0)
+			{
+				var len = Math.round(newWidth / my.noteWidth);
+
+				if(!newLengths[i])
+				{
+					newLengths[i] = {};
+				}
+
+				newLengths[i][j] = len;
+
+				mark.newLength = len;
+
+				if(newWidth != mark.resizeShadow.getWidth())
+				{
+					need_update = true;
+					mark.resizeShadow.setWidth(newWidth);
+				}
+			}
+		});
+
+		if(need_update)
+		{
+			my.selectionResizeAllowed = true;
+
+			for(var i in newLengths)
+			{
+				for(var j in newLengths[i])
+				{
+					var except 		= {};
+					except[i] 		= {};
+					except[i][j] 	= true;
+					if(my.model.canAddNoteAt(i, j, newLengths[i][j], except, newLengths))
+					{
+						if(my.marks[i][j].resizeAllowed === false)
+						{
+							my.marks[i][j].resizeAllowed = true;
+							
+							var shadow = my.marks[i][j].resizeShadow;
+
+							shadow.setFill(shadow.oldFill);
+							shadow.setOpacity(shadow.oldOpacity);
+						}
+					}
+					else
+					{
+						if(my.marks[i][j].resizeAllowed !== false)
+						{
+							my.marks[i][j].resizeAllowed = false;
+
+							var shadow = my.marks[i][j].resizeShadow;
+
+							shadow.oldFill = shadow.getFill();
+							shadow.oldOpacity = shadow.getOpacity();
+
+							shadow.setFill('red');
+							shadow.setOpacity(0.6);
+						}
+
+						my.selectionResizeAllowed = false;
+					}
+				}
+			}
+		}
+
+		if(need_update)
+		{
+			my.selectionLayer.draw();
+		}
+	};
+
+	this.endSelectionResize = function(e)
+	{
+		var newSelection = {};
+
+		if(my.selectionResizeAllowed)
+		{
+			my.makeSnapshot();
+		}
+
+		my.eachSelectedMark(function(i, j, mark)
+		{
+			if(my.selectionResizeAllowed)
+			{			
+				// Can't both remove and add from the array we are looping on!!
+				if(!newSelection[i])
+				{
+					newSelection[i] = {};
+				}
+
+				newSelection[i][j] = mark.newLength;
+
+				if(mark.isRootOfResizeOperation)
+				{
+					my._penSize = mark.newLength;
+				}
+
+
+				my.removeNote(i, j);
+			}
+
+			if(mark.resizeShadow)
+			{
+				mark.resizeShadow.remove();
+				mark.resizeShadow = undefined;
+			}
+			mark.originalWidth  = undefined;
+			mark.resizeAllowed  = undefined;
+			mark.newLength 		= undefined;
+			mark.isRootOfResizeOperation = undefined;
 
 		});
 
@@ -616,6 +816,103 @@ var PatternView = function(options)
 
 		my.selectionLayer.draw();
 		my.setMarksListening(true);
+	};
+
+	this.makeSnapshot = function(options)
+	{
+		if(options === undefined)
+		{
+			options = {};
+		}
+
+		if(my.history)
+		{
+			my.makeSnapshotBeforeLoad = true;
+
+			var selection = {};
+			my.eachSelectedMark(function(i, j){
+				if(my.selection[i][j])
+				{
+					if(!selection[i])
+					{
+						selection[i] = {};
+					}
+					selection[i][j] = true;
+				}
+			});
+
+			var container = $('#pattern-view-container');
+
+			var data = my.marksLayer.toDataURL({
+				mimeType: 'image/png',
+				quality: 0,
+				x: container.scrollLeft(),
+				y: container.scrollTop(),
+				width: container.width(),
+				height: container.height()
+			});
+
+			var topLeftVisible = my.getNoteAndSemitone(container.scrollLeft(), container.scrollTop());
+
+			var h = {
+				notes: JSON.stringify(my.model.notes),
+				selection: JSON.stringify(selection),
+				image: data,
+				topLeftVisible: topLeftVisible,
+				controller: 'PatternView'
+			};
+
+			my.history.record(h, options);
+		}
+	};
+
+	this.removeAllFromGrid = function()
+	{
+		this.eachNote(function(i, j){
+			my.removeNote(i, j);
+		});
+	};
+
+	this.addModelNotesToView = function()
+	{
+		this.eachNote(function(i, j){
+			my.addNoteToViewAt(i, j, {draw: false});
+		});
+
+		this.marksLayer.draw();
+	};
+
+	this.loadSnapshot = function(h)
+	{
+		if(my.makeSnapshotBeforeLoad === true)
+		{
+			my.makeSnapshot({apply: false});
+			my.makeSnapshotBeforeLoad = false;
+		}
+
+		my.removeAllFromGrid();
+
+		my.model.notes = JSON.parse(h.notes);
+		my.addModelNotesToView();
+
+		var selection = JSON.parse(h.selection);
+
+		for(var i in selection)
+		{
+			for(var j in selection[i])
+			{
+				if(selection[i][j])
+				{
+					my.selectMark(i, j);
+				}
+			}
+		}
+
+		my.marksLayer.draw();
+		my.selectionLayer.draw();
+		var scrollTo = my.noteTopLeft(h.topLeftVisible.note, h.topLeftVisible.semitone);
+		console.log(h.topLeftVisible, scrollTo);
+		$('#pattern-view-container').scrollTo({top: scrollTo.y, left: scrollTo.x}, 500);
 	};
 
 	this.getNoteColor = function(name)
@@ -635,7 +932,32 @@ var PatternView = function(options)
 		{
 			for(var j in my.selection[i])
 			{
-				callback(i, j, my.selection[i][j]);
+				if(my.selection[i][j])
+				{
+					var do_continue = callback(i, j, my.selection[i][j]);
+					if(do_continue === false)
+					{
+						return;
+					}
+				}
+			}
+		}
+	};
+
+	this.eachNote = function(callback)
+	{
+		for(var i in my.model.notes)
+		{
+			for(var j in my.model.notes[i])
+			{
+				if(my.model.notes[i][j])
+				{
+					var do_continue = callback(i, j, my.model.notes[i][j]);
+					if(do_continue === false)
+					{
+						return;
+					}
+				}
 			}
 		}
 	};
