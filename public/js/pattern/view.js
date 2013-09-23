@@ -911,7 +911,6 @@ var PatternView = function(options)
 		my.marksLayer.draw();
 		my.selectionLayer.draw();
 		var scrollTo = my.noteTopLeft(h.topLeftVisible.note, h.topLeftVisible.semitone);
-		console.log(h.topLeftVisible, scrollTo);
 		$('#pattern-view-container').scrollTo({top: scrollTo.y, left: scrollTo.x}, 500);
 	};
 

@@ -1,8 +1,13 @@
 var Song = function(options)
 {
+	if(options === undefined)
+	{
+		options = {};
+	}
+
 	var my = this;
 
-	my.name   = options.name;
+	my.name   = options.name || 'untitled';
 	my.tracks = options.tracks || {'default': new Track({name: 'default'})};
 
 	my.serialize = function()

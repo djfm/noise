@@ -109,6 +109,12 @@ div.pattern-history:hover
 	background-color: #D6FBFF;
 }
 
+div.pattern-history.selected
+{
+	cursor: pointer;
+	background-color: #90CA77;
+}
+
 div.pattern-history a
 {
 	font-size: 0.7em;

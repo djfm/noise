@@ -36,7 +36,7 @@
 			<div id="pattern-history-container" class="large-2 columns" ng-controller="PatternController">
 				<div class="row" ng-repeat = "h in history.history">
 					<div class="large-12 columns">
-						<div class="pattern-history" ng-click="loadHistoryItem(h)">
+						<div class="pattern-history" ng-click="loadHistoryItem(h, $event)">
 							<span class="date">{{h.date}}</span>
 							<img src="{{h.image}}"></img>
 						</div>
@@ -61,6 +61,11 @@
 			{
 				song = Song.deserialize(songs[s]);
 				break;
+			}
+
+			if(song === undefined)
+			{
+				song = new Song();
 			}
 
 			var history = new History();
