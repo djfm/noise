@@ -14,6 +14,16 @@ var Song = function(options)
 	{
 		return JSON.stringify(this);
 	};
+
+	my.getMeasureCount = function()
+	{
+		return 100;
+	};
+
+	my.getTrackCount = function()
+	{
+		return 10;
+	}
 };
 
 Song.deserialize = function(json)

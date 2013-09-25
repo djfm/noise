@@ -37,13 +37,7 @@ div.clear
 {
 	clear: both;
 }
-div.pattern-view
-{
-	max-height: 400px;
-	overflow: auto;
-	padding: 5px;
-	white-space: nowrap;
-}
+
 div.semitone-row
 {
 	display: table;

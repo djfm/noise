@@ -45,13 +45,22 @@
 			</div>
 		</div>
 
+		<div class="row">
+			<div class="large-10 columns">
+				<div id="sequencer-view-container">
+				</div>
+			</div>
+		</div>
+
 		<script src="/js/solfege.js"></script>
 		<script src="/js/kinetic/util.js"></script>
 		<script src="/js/components.js"></script>
 		<script src="/js/song.js"></script>
 		<script src="/js/track.js"></script>
 		<script src="/js/history.js"></script>
+		<script src="/js/grid.js"></script>
 		<script src="/js/pattern/view.js"></script>
+		<script src="/js/sequencer/view.js"></script>
 
 		<script type="text/javascript">
 			var song;
@@ -74,6 +83,13 @@
 				container: 'pattern-view-container',
 				model: song.tracks['default'],
 				history: history
+			});
+
+			var sequencerView = new SequencerView({
+				container: 'sequencer-view-container',
+				cellWidth: 50,
+				cellHeight: 38,
+				model: song
 			});
 
 		</script>
