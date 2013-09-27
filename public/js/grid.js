@@ -15,6 +15,23 @@ var Grid = function()
 
 		this.penSize = options.penSize || 4;
 
+		this.callbacks = {};
+
+		if(options.onSelectionChanged)
+		{
+			this.callbacks.onSelectionChanged = options.onSelectionChanged;
+		}
+
+		if(options.onMarksAdded)
+		{
+			this.callbacks.onMarksAdded = options.onMarksAdded;
+		}
+
+		if(options.onMarksRemoved)
+		{
+			this.callbacks.onMarksRemoved = options.onMarksRemoved;
+		}
+
 		this.getCellsPerRowCount = function()
 		{
 			return options.getCellsPerRowCount(this.model);
@@ -38,9 +55,9 @@ var Grid = function()
 			});
 		}
 
-		if(this.backgroundLayer)
+		if(this.eventsLayer)
 		{
-			this.backgroundLayer.remove();
+			this.eventsLayer.remove();
 		}
 
 		if(this.marksLayer)
@@ -53,16 +70,26 @@ var Grid = function()
 			this.selectionLayer.remove();
 		}
 
+		if(this.backgroundLayer)
+		{
+			this.backgroundLayer.remove();
+		}
+
 		this.backgroundLayer = new Kinetic.Layer();
-		this.background = new Kinetic.Rect({
+		this.stage.add(this.backgroundLayer);
+
+		this.eventsReceiverLayer = new Kinetic.Layer();
+
+		this.eventsLayer = new Kinetic.Layer();
+		this.eventsReceiver = new Kinetic.Rect({
 			x: 0,
 			y: 0,
 			width: this.getWidth(),
 			height: this.getHeight(),
 			opacity: 0
 		});
-		this.backgroundLayer.add(this.background);
-		this.stage.add(this.backgroundLayer);
+		this.eventsLayer.add(this.eventsReceiver);
+		this.stage.add(this.eventsLayer);
 
 		this.marksLayer = new Kinetic.Layer();
 
@@ -78,6 +105,7 @@ var Grid = function()
 		this.selectionMap 	= {};
 
 		this.selectionId = 0;
+		this.operationId = 0;
 
 		this.draw();
 	};
@@ -109,6 +137,42 @@ var Grid = function()
 			}
 		}
 	}
+
+	this.getInt2DArrayKeys = function(arr)
+	{
+		var keys = [];
+		this.iterate2DArray(arr, function(i,j){
+			keys.push([parseInt(i), parseInt(j)]);
+		});
+		return keys;
+	};
+
+	this.map2DArray = function(arr, callback)
+	{
+		if(!callback)
+		{
+			callback = function(v){return v;};
+		}
+		var res = {};
+		this.iterate2DArray(arr, function(i, j, value){
+			my.set2DArrayAt(res, i, j, callback(value));
+		});
+		return res;
+	};
+
+	this.diff2DArrayKeys = function(a, b)
+	{
+		var res = {};
+
+		this.iterate2DArray(a, function(i, j, v){
+			if(my.get2DArrayAt(b, i, j) === undefined)
+			{
+				my.set2DArrayAt(res, i, j, v);
+			}
+		});
+
+		return res;
+	};
 
 	this.setUseMapAt = function(row, col, value)
 	{
@@ -181,7 +245,7 @@ var Grid = function()
 			};
 		};
 
-		this.background.on('mousedown', function(e){
+		this.eventsReceiver.on('mousedown', function(e){
 
 			startPos = {x: e.layerX, y: e.layerY};
 			lastPos  = {x: e.layerX, y: e.layerY};
@@ -197,13 +261,13 @@ var Grid = function()
 			}
 		});
 
-		this.background.on('mousemove', function(e){
+		this.eventsReceiver.on('mousemove', function(e){
 			if(my.mightDrag === true)
 			{
 				my.dragging 	= true;
 				my.mightDrag	= false;
-				my.background.moveToTop();
-				my.backgroundLayer.draw();
+				my.eventsReceiver.moveToTop();
+				my.eventsLayer.draw();
 
 				my.dragStart(info(e));
 				lastPos  = {x: e.layerX, y: e.layerY};
@@ -215,7 +279,7 @@ var Grid = function()
 			}
 		});
 
-		this.background.on('mouseup', function(e){			
+		this.eventsReceiver.on('mouseup', function(e){			
 			if(my.mightDrag === true)
 			{
 				my.mightDrag = false;
@@ -224,8 +288,8 @@ var Grid = function()
 			else if(my.dragging === true)
 			{
 				my.dragging  = false;
-				my.background.moveToBottom();
-				my.backgroundLayer.draw();
+				my.eventsReceiver.moveToBottom();
+				my.eventsLayer.draw();
 
 				my.dragEnd(info(e));
 			}
@@ -293,9 +357,11 @@ var Grid = function()
 	{
 		if(!mark.isSelected)
 		{
+			var deSelected = this.getInt2DArrayKeys(this.selectionMap);
 			this.clearSelection();
 			this.selectMark(row, col);
 			this.selectionId++;
+			this.onSelectionChanged([parseInt(row), parseInt(col)], [parseInt(row), parseInt(col)], deSelected);
 		}
 
 		if(mark.shape.getX()+mark.shape.getWidth() - e.currentPos.x < 15)
@@ -420,6 +486,8 @@ var Grid = function()
 		this.resizingSelection = false;
 
 		var newSelection = {};
+		var addedMarks 	 = [];
+		var removedMarks = [];
 
 		this.eachSelectedMark(function(i, j){
 			var mark = my.getMarksMapAt(i, j);
@@ -432,6 +500,7 @@ var Grid = function()
 					my.penSize = mark.newLength;
 				}
 				my.removeMarkAt(i, j);
+				removedMarks.push({row: i, col: j, length: mark.length});
 			}
 
 			mark.resizeShadow.remove();
@@ -444,15 +513,26 @@ var Grid = function()
 		this.iterate2DArray(newSelection, function(i, j, length){
 			my.addMarkAt(i, j, length);
 			my.selectMark(i, j);
+			addedMarks.push({row: i, col: j, length: length});
 		});
 
 		my.selectionLayer.draw();
 		my.marksLayer.draw();
+
+		this.onMarksAdded(addedMarks);
+		this.onMarksRemoved(removedMarks);
+
+		this.operationId++;
 	};
 
 	this.initiateMoveOperation = function(row, col, mark, e)
 	{
 		this.selectionMoveIsCopy = e.mouseEvent.ctrlKey;
+
+		if(this.selectionMoveIsCopy)
+		{
+			this.selectionMayChange();
+		}
 
 		this.movingSelection = true;
 
@@ -550,6 +630,9 @@ var Grid = function()
 
 	this.endMoveOperation = function(e)
 	{
+		var addedMarks 	 = [];
+		var removedMarks = [];
+
 		var newSelection = {};
 
 		this.eachSelectedMark(function(i, j)
@@ -573,6 +656,7 @@ var Grid = function()
 				else
 				{
 					my.removeMarkAt(i, j);
+					removedMarks.push({row: i, col: j, length: mark.length});
 				}
 
 				my.set2DArrayAt(newSelection, row, col, mark.length);
@@ -582,11 +666,21 @@ var Grid = function()
 		this.iterate2DArray(newSelection, function(i, j, length){
 			my.addMarkAt(i, j, length);
 			my.selectMark(i, j);
+			addedMarks.push({row: i, col: j, length: length});
 		});
 		
+		this.onMarksAdded(addedMarks);
+		this.onMarksRemoved(removedMarks);
+
+		if(this.selectionMoveIsCopy)
+		{
+			this.maybeFireSelectionChangeEvent();
+		}
+
 		my.selectionLayer.draw();
 		my.marksLayer.draw();
 
+		this.operationId++;
 	};
 
 	this.drawSelectionRect = function(e)
@@ -623,11 +717,19 @@ var Grid = function()
 
 	this.areaSelectionStarted = function(e)
 	{
+		this.selectionMayChange();
+		this.selectionAtStart = this.map2DArray(this.selectionMap);
+
 		if(!e.mouseEvent.ctrlKey)
 		{
 			this.clearSelection();
 			this.marksLayer.draw();
 		}
+	};
+
+	this.selectionMayChange = function()
+	{
+		this.selectionAtStart = this.map2DArray(this.selectionMap);
 	};
 
 	this.areaSelectionChanged = function(e)
@@ -638,6 +740,7 @@ var Grid = function()
 	this.areaSelectionEnded = function(e)
 	{
 		this.selectionId++;
+		this.maybeFireSelectionChangeEvent();
 	};
 
 	this.clearSelection = function()
@@ -645,6 +748,24 @@ var Grid = function()
 		this.eachSelectedMark(function(i, j){
 			my.unselectMark(i, j);
 		});
+	};
+
+	this.maybeFireSelectionChangeEvent = function()
+	{
+		var newlySelected 	= this.getInt2DArrayKeys(
+								this.diff2DArrayKeys(this.selectionMap, this.selectionAtStart)
+							);
+
+		var deSelected 		= this.getInt2DArrayKeys(
+								this.diff2DArrayKeys(this.selectionAtStart, this.selectionMap)
+							); 
+ 
+		if(newlySelected.length !== 0 || deSelected.length !== 0)
+		{
+			this.onSelectionChanged(this.getInt2DArrayKeys(this.selectionMap), newlySelected, deSelected);
+		}
+
+		this.selectionAtStart = undefined;
 	};
 
 	this.computeSelection = function(x, y, width, height)
@@ -741,13 +862,15 @@ var Grid = function()
 
 	this.markClicked = function(row, col, mark, e)
 	{
+		this.selectionMayChange();
+		
 		if(e.button === 0)
 		{
 			if(!e.ctrlKey)
 			{
 				this.clearSelection();
 			}
-
+			
 			if(mark.isSelected)
 			{
 				this.unselectMark(row, col, mark);
@@ -758,13 +881,18 @@ var Grid = function()
 				this.selectionId++;
 			}
 
+
 			this.marksLayer.draw();
 		}
 		else if(e.button === 2)
 		{
 			this.removeMarkAt(row, col);
 			this.marksLayer.draw();
+			this.onMarksRemoved([{row: row, col: col, length: mark.length}]);
 		}
+
+		this.maybeFireSelectionChangeEvent();
+		this.operationId++;
 	};
 
 	this.gridClicked = function(row, col, e)
@@ -776,8 +904,12 @@ var Grid = function()
 		}
 		else
 		{
-			this.addMarkAt(row, col, this.penSize);
-			this.marksLayer.draw();	
+			if(this.addMarkAt(row, col, this.penSize))
+			{
+				this.marksLayer.draw();	
+				this.onMarksAdded([{row: row, col: col, length: this.penSize}]);
+				this.operationId++;
+			}
 		}
 	};
 
@@ -885,8 +1017,32 @@ var Grid = function()
 
 	this.draw = function()
 	{
-		this.backgroundLayer.draw();
+		this.eventsLayer.draw();
 		this.marksLayer.draw();
 		this.selectionLayer.draw();
+	};
+
+	this.onMarksAdded = function(marks)
+	{
+		if(this.callbacks.onMarksAdded)
+		{
+			this.callbacks.onMarksAdded(marks, this.operationId);
+		}
+	};
+
+	this.onMarksRemoved = function(marks)
+	{		
+		if(this.callbacks.onMarksRemoved)
+		{
+			this.callbacks.onMarksRemoved(marks, this.operationId);
+		}
+	};
+
+	this.onSelectionChanged = function(total, selected, deselected)
+	{
+		if(this.callbacks.onSelectionChanged)
+		{
+			this.callbacks.onSelectionChanged(total, selected, deselected, this.operationId);
+		}
 	};
 };
