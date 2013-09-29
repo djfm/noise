@@ -6,46 +6,17 @@ var Grid = function()
 	{
 		my = this;
 
+
 		this.container = options.container;
 
 		this.model = options.model;
+
+		this.history   = options.history || this.model.history;
 
 		this.cellWidth  = options.cellWidth;
 		this.cellHeight = options.cellHeight;
 
 		this.penSize = options.penSize || 4;
-
-		this.callbacks = {};
-
-		if(options.onSelectionChanged)
-		{
-			this.callbacks.onSelectionChanged = options.onSelectionChanged;
-		}
-
-		if(options.onMarksAdded)
-		{
-			this.callbacks.onMarksAdded = options.onMarksAdded;
-		}
-
-		if(options.onMarksRemoved)
-		{
-			this.callbacks.onMarksRemoved = options.onMarksRemoved;
-		}
-
-		if(options.onOperationCompleted)
-		{
-			this.callbacks.onOperationCompleted = options.onOperationCompleted;
-		}
-
-		this.getCellsPerRowCount = function()
-		{
-			return options.getCellsPerRowCount(this.model);
-		};
-
-		this.getRowCount = function()
-		{
-			return options.getRowCount(this.model);
-		};
 
 		if(!this.stage)
 		{
@@ -847,7 +818,7 @@ var Grid = function()
 
 		mark.shape.previousOpacity 	= mark.shape.getOpacity();
 		mark.shape.previousFill  	= mark.shape.getFill();
-		mark.shape.setOpacity(1);
+		mark.shape.setOpacity(0.9);
 		mark.shape.setFill('yellow');
 	};
 
@@ -1047,34 +1018,81 @@ var Grid = function()
 		});
 	};
 
-	this.onMarksAdded = function(marks)
+	if(!this.onMarksAdded)
 	{
-		if(this.callbacks.onMarksAdded)
-		{
-			this.callbacks.onMarksAdded(marks, this.operationId);
-		}
-	};
+		this.onMarksAdded = function(){};
+	}
 
-	this.onMarksRemoved = function(marks)
+	if(!this.onMarksRemoved)
+	{
+		this.onMarksRemoved = function(){};
+	}
+
+	if(!this.onSelectionChanged)
+	{
+		this.onSelectionChanged = function(){};
+	}
+
+	if(!this.onOperationCompleted)
+	{
+		this.onOperationCompleted = function(){};
+	}
+
+	this.makeSnapshot = function(options)
 	{		
-		if(this.callbacks.onMarksRemoved)
+		if(options === undefined)
 		{
-			this.callbacks.onMarksRemoved(marks, this.operationId);
+			options = {};
+		}
+
+		if(my.history)
+		{
+			var selection = {};
+			my.eachSelectedMark(function(i, j){
+				my.set2DArrayAt(selection, i, j, true);
+			});
+
+			var container = $('#' + this.container);
+
+			var data = my.marksLayer.toDataURL({
+				mimeType: 'image/png',
+				quality: 0,
+				x: container.scrollLeft(),
+				y: container.scrollTop(),
+				width: container.width(),
+				height: container.height()
+			});
+
+			var topLeftVisible = my.XYtoRowCol(container.scrollLeft(), container.scrollTop());
+
+			var h = {
+				data: JSON.stringify(my.getModelData()),
+				selection: JSON.stringify(selection),
+				image: data,
+				topLeftVisible: topLeftVisible,
+				controller: 'PatternView'
+			};
+
+			my.history.record(h, options);
 		}
 	};
 
-	this.onSelectionChanged = function(total, selected, deselected)
+	this.loadSnapshot = function(h)
 	{
-		if(this.callbacks.onSelectionChanged)
-		{
-			this.callbacks.onSelectionChanged(total, selected, deselected, this.operationId);
-		}
+		my.removeAllMarks();
+
+		my.setModelData(JSON.parse(h.data));
+		my.addModelDataToView();
+
+
+		my.iterate2DArray(JSON.parse(h.selection), function(i, j){
+			my.selectMark(i, j);
+		});
+
+		my.marksLayer.draw();
+		my.selectionLayer.draw();
+		var scrollTo = my.RowColToXY(h.topLeftVisible.row, h.topLeftVisible.col);
+		$('#'+my.container).scrollTo({top: scrollTo.y, left: scrollTo.x}, 500);
 	};
 
-	this.onOperationCompleted = function(){
-		if(this.callbacks.onOperationCompleted)
-		{
-			this.callbacks.onOperationCompleted(this.operationId);
-		}
-	};
 };

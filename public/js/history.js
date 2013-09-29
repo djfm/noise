@@ -3,8 +3,6 @@ var History = function(){
 
 	this.record = function(h, options)
 	{
-		$('div.pattern-history.selected').removeClass('selected');
-		
 		if(options === undefined)
 		{
 			options = {};
@@ -15,6 +13,11 @@ var History = function(){
 		if(this.scope && options.apply !== false)
 		{
 			this.scope.$apply();
+		}
+
+		if(this.onRecord)
+		{
+			this.onRecord(h);
 		}
 	}
 };

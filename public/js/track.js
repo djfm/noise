@@ -11,21 +11,16 @@ var Track = function(options)
 	my.config.maxOctave = options.maxOctave || 8;
 	my.config.minOctave = options.minOctave || 0;
 
-	my.segments = {};
+	my.history = options.history || new History();
+
+	my.history.onRecord = function()
+	{
+		$('div.pattern-history.selected').removeClass('selected');
+	};
 
 	my.notes = {};
 
 	my.config.instrument = options.instrument;
-
-	my.addSegmentAt = function(i, len)
-	{
-		my.segments[i] = len;
-	};
-
-	my.removeSegmentAt = function(i)
-	{
-		delete my.segments[i];
-	};
 
 	my.addNoteAt = function(pos, semitone, len)
 	{

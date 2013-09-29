@@ -86,66 +86,34 @@ var PatternView = function(options)
 		}
 	};
 
-	this.makeSnapshot = function(options)
+	this.setModel = function(model)
 	{
-		if(options === undefined)
+		var needToRedrawGrid = 
+				model.notesPerBeat != this.model.notesPerBeat
+			|| 	model.beatsPerMeasure != this.model.beatsPerMeasure
+			|| 	model.measureCount != this.model.measureCount;
+
+		console.log(this.model.history);
+
+		var scope = this.model.history.scope;
+
+		this.removeAllMarks();
+		this.model = model;
+		if(needToRedrawGrid)
 		{
-			options = {};
+			this.drawGrid();
 		}
+		this.addModelDataToView();
+		this.marksLayer.draw();
 
-		if(my.history)
-		{
-			var selection = {};
-			my.eachSelectedMark(function(i, j){
-				my.set2DArrayAt(selection, i, j, true);
-			});
-
-			var container = $('#pattern-view-container');
-
-			var data = my.marksLayer.toDataURL({
-				mimeType: 'image/png',
-				quality: 0,
-				x: container.scrollLeft(),
-				y: container.scrollTop(),
-				width: container.width(),
-				height: container.height()
-			});
-
-			var topLeftVisible = my.XYtoRowCol(container.scrollLeft(), container.scrollTop());
-
-			var h = {
-				notes: JSON.stringify(my.model.notes),
-				selection: JSON.stringify(selection),
-				image: data,
-				topLeftVisible: topLeftVisible,
-				controller: 'PatternView'
-			};
-
-			my.history.record(h, options);
-		}
+		scope.history = this.model.history;
+		this.model.history.scope = scope;
+		my.history = this.model.history;
 	};
 
-	this.loadSnapshot = function(h)
+	this.addModelDataToView = function()
 	{
-		my.removeAllMarks();
-
-		my.model.notes = JSON.parse(h.notes);
-		my.addModelNotesToView();
-
-
-		my.iterate2DArray(JSON.parse(h.selection), function(i, j){
-			my.selectMark(i, j);
-		});
-
-		my.marksLayer.draw();
-		my.selectionLayer.draw();
-		var scrollTo = my.RowColToXY(h.topLeftVisible.row, h.topLeftVisible.col);
-		$('#pattern-view-container').scrollTo({top: scrollTo.y, left: scrollTo.x}, 500);
-	};
-
-	this.addModelNotesToView = function()
-	{
-		this.iterate2DArray(this.model.notes, function(note, semitone, length){
+		this.iterate2DArray(this.getModelData(), function(note, semitone, length){
 			var rc = my.noteSemitoneToRowCol(note, semitone);
 			my.addMarkAt(rc.row, rc.col, length);
 		});
@@ -167,16 +135,16 @@ var PatternView = function(options)
 		};
 	};
 
-	options.getCellsPerRowCount = function(track){
-		return track.config.measureCount * track.config.beatsPerMeasure * track.config.notesPerBeat;
+	this.getCellsPerRowCount = function(){
+		return my.model.config.measureCount * my.model.config.beatsPerMeasure * track.config.notesPerBeat;
 	};
 
-	options.getRowCount = function(track)
+	this.getRowCount = function()
 	{
-		return (track.config.maxOctave - track.config.minOctave + 1) * 12;
+		return (my.model.config.maxOctave - my.model.config.minOctave + 1) * 12;
 	};
 
-	options.onMarksAdded = function(marks, operationId){
+	this.onMarksAdded = function(marks, operationId){
 		for(var i in marks)
 		{
 			var ns = my.rowColToNoteSemitone(marks[i].row, marks[i].col);
@@ -184,7 +152,7 @@ var PatternView = function(options)
 		}
 	};
 
-	options.onMarksRemoved = function(marks, operationId){
+	this.onMarksRemoved = function(marks, operationId){
 		for(var i in marks)
 		{
 			var ns = my.rowColToNoteSemitone(marks[i].row, marks[i].col);
@@ -192,12 +160,22 @@ var PatternView = function(options)
 		}
 	};
 
-	options.onOperationCompleted = function()
+	this.onOperationCompleted = function()
 	{
 		my.makeSnapshot();
 	};
 
-	options.onSelectionChanged = function(
+	this.getModelData = function()
+	{
+		return my.model.notes;
+	};
+
+	this.setModelData = function(data)
+	{
+		my.model.notes = data;
+	};
+
+	this.onSelectionChanged = function(
 		currentSelection,
 		newlySelected,
 		deselected, 
@@ -212,12 +190,10 @@ var PatternView = function(options)
 	this.noteWidth 	= options.cellWidth  = 30;
 	this.noteHeight = options.cellHeight = 18;
 
-	this.history = options.history;
-
 	this.init(options);
 	this.drawGrid();
 
-	this.addModelNotesToView();
+	this.addModelDataToView();
 	this.marksLayer.draw();
 };
 

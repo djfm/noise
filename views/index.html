@@ -18,11 +18,7 @@
 		<script src="/js/vendor/angular.js"></script>
 
 		<style type="text/css">
-			div#pattern-view-container
-			{
-				overflow: auto;
-				max-height: 400px;
-			}
+			
 		</style>
 
 	</head>
@@ -30,10 +26,10 @@
 	<body ng-app>
 		<div class="row" ng-controller="PatternController">
 			<div class="large-10 columns">
-				<div id="pattern-view-container">
+				<div id="pattern-view-container" class="pattern">
 				</div>
 			</div>
-			<div id="pattern-history-container" class="large-2 columns">
+			<div id="pattern-history-container" class="large-2 columns pattern">
 				<div class="row" ng-repeat = "h in history.history">
 					<div class="large-12 columns">
 						<div class="pattern-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem(h, $event)">
@@ -45,10 +41,10 @@
 			</div>
 		</div>
 
-		<div class="row" ng-controller="SequencerController">
+		<div id="sequencer-row" class="row" ng-controller="SequencerController">
 			<div class="large-2 columns">
-				<div id="sequencer-track-handles-container">
-					<div class="track-handle row collapse" style="height: {{cellHeight}}px" ng-repeat="handle in handles()">
+				<div id="sequencer-track-handles-container sequencer">
+					<div ng-click="activateTrack($index)" class="track-handle row collapse" style="height: {{cellHeight}}px" ng-repeat="handle in handles()">
 						<div class="small-12 columns">
 							{{handle.name}}
 						</div>
@@ -56,11 +52,17 @@
 				</div>
 			</div>
 			<div class="large-8 columns">
-				<div id="sequencer-view-container">
+				<div class="sequencer" id="sequencer-view-container">
 				</div>
 			</div>
-			<div class="large-2 columns">
-				<div id="sequencer-history-container">
+			<div id="sequencer-history-container" class="sequencer large-2 columns">
+				<div class="row" ng-repeat = "h in history.history">
+					<div class="large-12 columns">
+						<div class="sequencer-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem(h, $event)">
+							<span class="date">{{h.date}}</span>
+							<img src="{{h.image}}"></img>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -98,19 +100,24 @@
 				break;
 			}
 
-			var history = new History();
+			var sequencerHistory = new History();
+
+			sequencerHistory.onRecord = function()
+			{
+				$('div.sequencer-history.selected').removeClass('selected');
+			};
 
 			var patternView = new PatternView({
 				container: 'pattern-view-container',
-				model: track,
-				history: history
+				model: track
 			});
 
 			var sequencerView = new SequencerView({
 				container: 'sequencer-view-container',
 				cellWidth: 50,
 				cellHeight: 38,
-				model: song
+				model: song,
+				history: sequencerHistory
 			});
 
 		</script>

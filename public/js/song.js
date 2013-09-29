@@ -8,10 +8,23 @@ var Song = function(options)
 	var my = this;
 
 	my.name   = options.name || 'untitled';
-	my.tracks = options.tracks || {
-		'lead': new Track({name: 'lead'}),
-		'verse': new Track({name: 'verse'}),
-		'chorus': new Track({name: 'chorus'})
+	my.tracks = options.tracks || [
+		new Track({name: 'lead'}),
+		new Track({name: 'verse'}),
+		new Track({name: 'chorus'})
+	];
+
+	my.segments = {};
+
+	my.addSegmentAt = function(track, measure, length)
+	{
+		if(!my.segments[track])my.segments[track] = {};
+		my.segments[track][measure] = length;
+	};
+
+	my.removeSegmentAt = function(track, measure)
+	{
+		delete my.segments[track][measure];
 	};
 
 	my.serialize = function()

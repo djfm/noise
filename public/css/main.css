@@ -96,47 +96,54 @@ span.date
 	font-size: 0.7vw;
 }
 
-div#pattern-view-container, div#sequencer-view-container, div#sequencer-track-handles-container, div#sequencer-history-container
+
+div#pattern-view-container, div#sequencer-view-container
 {
-	max-height: 400px;
-	min-height: 200px;
 	overflow: auto;
-	padding: 5px;
-	white-space: nowrap;
 }
+
 
 div#sequencer-track-handles-container
 {
 	overflow: hidden;
 }
 
-div.pattern-history
+div.pattern-history, div.sequencer-history
 {
 	border: 1px solid #CCC;
 	padding: 5px;
 	margin-bottom: 5px;
 }
 
-div.pattern-history:hover
+div.pattern-history:hover, div.sequencer-history:hover
 {
 	cursor: pointer;
 	background-color: #D6FBFF;
 }
 
-div.pattern-history.selected
+div.pattern-history.selected, div.sequencer-history.selected
 {
-	border: 2px solid black;
+	border: 1px solid black;
 }
 
-div.pattern-history a
+div#pattern-history-container, div#sequencer-history-container
 {
-	font-size: 0.7em;
-}
-
-div#pattern-history-container
-{
-	max-height: 400px;
 	overflow-y: auto;
+}
+
+div.pattern
+{
+	height: 400px;
+}	
+
+div.sequencer
+{
+	height: 300px;
+}
+
+div#sequencer-row
+{
+	margin-top: 10px;
 }
 
 div.track-handle

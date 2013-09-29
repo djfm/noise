@@ -1,7 +1,7 @@
 function PatternController($scope)
 {
-	$scope.history = history;
-	history.scope  = $scope;
+	$scope.history = patternView.model.history;
+	$scope.history.scope  = $scope;
 
 	$scope.loadHistoryItem = function(h, event)
 	{

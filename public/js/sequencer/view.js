@@ -1,5 +1,7 @@
 var SequencerView = function(options)
 {
+	var my = this;
+	
 	this.drawGrid = function()
 	{
 		var y = 0;
@@ -41,14 +43,50 @@ var SequencerView = function(options)
 		this.backgroundLayer.draw();
 	};
 
-	options.getCellsPerRowCount = function(song)
+	this.getCellsPerRowCount = function()
 	{
-		return song.getMeasureCount();
+		return this.model.getMeasureCount();
 	};
 
-	options.getRowCount = function(song)
+	this.getRowCount = function(song)
 	{
-		return song.getTrackCount();
+		return this.model.getTrackCount();
+	};
+
+	this.getModelData = function()
+	{
+		return this.model.segments;
+	};
+
+	this.setModelData = function(data)
+	{
+		this.model.segments = data;
+	}
+
+	this.addModelDataToView = function()
+	{
+		this.iterate2DArray(this.getModelData(), function(track, measure, length){
+			my.addMarkAt(track, measure, length);
+		});
+	};
+
+	this.onOperationCompleted = function()
+	{
+		this.makeSnapshot();
+	};
+
+	this.onMarksAdded = function(marks, operationId){
+		for(var i in marks)
+		{
+			this.model.addSegmentAt(marks[i].row, marks[i].col, marks[i].length);
+		}
+	};
+
+	this.onMarksRemoved = function(marks, operationId){
+		for(var i in marks)
+		{
+			this.model.removeSegmentAt(marks[i].row, marks[i].col);
+		}
 	};
 
 	this.init(options);
