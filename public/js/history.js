@@ -3,6 +3,8 @@ var History = function(){
 
 	this.record = function(h, options)
 	{
+		$('div.pattern-history.selected').removeClass('selected');
+		
 		if(options === undefined)
 		{
 			options = {};

@@ -8,7 +8,11 @@ var Song = function(options)
 	var my = this;
 
 	my.name   = options.name || 'untitled';
-	my.tracks = options.tracks || {'default': new Track({name: 'default'})};
+	my.tracks = options.tracks || {
+		'lead': new Track({name: 'lead'}),
+		'verse': new Track({name: 'verse'}),
+		'chorus': new Track({name: 'chorus'})
+	};
 
 	my.serialize = function()
 	{
@@ -17,13 +21,25 @@ var Song = function(options)
 
 	my.getMeasureCount = function()
 	{
-		return 100;
+		return 120;
 	};
 
 	my.getTrackCount = function()
 	{
-		return 10;
-	}
+		return Object.keys(my.tracks).length;
+	};
+
+	my.getTrackConfigs = function()
+	{
+		var configs = [];
+
+		for(var i in my.tracks)
+		{
+			configs.push(my.tracks[i].config);
+		}
+
+		return configs;
+	};
 };
 
 Song.deserialize = function(json)

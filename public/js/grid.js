@@ -32,6 +32,11 @@ var Grid = function()
 			this.callbacks.onMarksRemoved = options.onMarksRemoved;
 		}
 
+		if(options.onOperationCompleted)
+		{
+			this.callbacks.onOperationCompleted = options.onOperationCompleted;
+		}
+
 		this.getCellsPerRowCount = function()
 		{
 			return options.getCellsPerRowCount(this.model);
@@ -519,8 +524,9 @@ var Grid = function()
 		my.selectionLayer.draw();
 		my.marksLayer.draw();
 
-		this.onMarksAdded(addedMarks);
 		this.onMarksRemoved(removedMarks);
+		this.onMarksAdded(addedMarks);
+		this.onOperationCompleted();
 
 		this.operationId++;
 	};
@@ -579,7 +585,7 @@ var Grid = function()
 			mark.freeMoveY += e.delta.y;
 
 			var targetLogicalPos 	= my.XYtoRowCol(mark.freeMoveX, mark.freeMoveY);
-			var targetPos 		 	= my.RCtoXY(targetLogicalPos.row, targetLogicalPos.col);
+			var targetPos 		 	= my.RowColToXY(targetLogicalPos.row, targetLogicalPos.col);
 			mark.targetLogicalPos 	= targetLogicalPos;
 
 			targetPos.x += 1;
@@ -669,8 +675,9 @@ var Grid = function()
 			addedMarks.push({row: i, col: j, length: length});
 		});
 		
+		this.onMarksRemoved(removedMarks);		
 		this.onMarksAdded(addedMarks);
-		this.onMarksRemoved(removedMarks);
+		this.onOperationCompleted();
 
 		if(this.selectionMoveIsCopy)
 		{
@@ -740,7 +747,11 @@ var Grid = function()
 	this.areaSelectionEnded = function(e)
 	{
 		this.selectionId++;
-		this.maybeFireSelectionChangeEvent();
+		if(this.maybeFireSelectionChangeEvent())
+		{
+			this.onOperationCompleted();
+		}
+		this.operationId++;
 	};
 
 	this.clearSelection = function()
@@ -759,13 +770,16 @@ var Grid = function()
 		var deSelected 		= this.getInt2DArrayKeys(
 								this.diff2DArrayKeys(this.selectionAtStart, this.selectionMap)
 							); 
- 
+ 		
+ 		var ret = false;
 		if(newlySelected.length !== 0 || deSelected.length !== 0)
 		{
+			ret = true;
 			this.onSelectionChanged(this.getInt2DArrayKeys(this.selectionMap), newlySelected, deSelected);
 		}
 
 		this.selectionAtStart = undefined;
+		return ret;
 	};
 
 	this.computeSelection = function(x, y, width, height)
@@ -863,14 +877,14 @@ var Grid = function()
 	this.markClicked = function(row, col, mark, e)
 	{
 		this.selectionMayChange();
-		
+
 		if(e.button === 0)
 		{
 			if(!e.ctrlKey)
 			{
 				this.clearSelection();
 			}
-			
+
 			if(mark.isSelected)
 			{
 				this.unselectMark(row, col, mark);
@@ -880,7 +894,6 @@ var Grid = function()
 				this.selectMark(row, col);
 				this.selectionId++;
 			}
-
 
 			this.marksLayer.draw();
 		}
@@ -892,6 +905,7 @@ var Grid = function()
 		}
 
 		this.maybeFireSelectionChangeEvent();
+		this.onOperationCompleted();
 		this.operationId++;
 	};
 
@@ -908,9 +922,11 @@ var Grid = function()
 			{
 				this.marksLayer.draw();	
 				this.onMarksAdded([{row: row, col: col, length: this.penSize}]);
+				this.onOperationCompleted();
 				this.operationId++;
 			}
 		}
+
 	};
 
 	/*
@@ -956,16 +972,17 @@ var Grid = function()
 			this.setUseMapAt(row, parseInt(col)+c, {row: row, col: col});
 		}
 
-		var xy = this.RCtoXY(row, col);
+		var xy = this.RowColToXY(row, col);
 
 		var rect = new Kinetic.Rect({
 			x: xy.x + 1,
-			y: xy.y,
-			width: this.cellWidth*length - 1,
-			height: this.cellHeight - 1,
+			y: xy.y + 1,
+			width: this.cellWidth*length - 2,
+			height: this.cellHeight - 2,
 			fill: 'blue',
 			opacity: 0.7,
-			stroke: 'black'
+			stroke: 'black',
+			strokeWidth: 1
 		});
 
 		rect.setListening(false);
@@ -1000,7 +1017,7 @@ var Grid = function()
 		return {row: Math.floor(y/this.cellHeight), col: Math.floor(x/this.cellWidth)};
 	};
 
-	this.RCtoXY = function(r, c)
+	this.RowColToXY = function(r, c)
 	{
 		return {x: c*this.cellWidth, y: r*this.cellHeight};
 	}
@@ -1020,6 +1037,14 @@ var Grid = function()
 		this.eventsLayer.draw();
 		this.marksLayer.draw();
 		this.selectionLayer.draw();
+	};
+
+	this.removeAllMarks = function()
+	{
+		this.eachMark(function(i, j, mark)
+		{
+			my.removeMarkAt(i, j, mark);
+		});
 	};
 
 	this.onMarksAdded = function(marks)
@@ -1043,6 +1068,13 @@ var Grid = function()
 		if(this.callbacks.onSelectionChanged)
 		{
 			this.callbacks.onSelectionChanged(total, selected, deselected, this.operationId);
+		}
+	};
+
+	this.onOperationCompleted = function(){
+		if(this.callbacks.onOperationCompleted)
+		{
+			this.callbacks.onOperationCompleted(this.operationId);
 		}
 	};
 };

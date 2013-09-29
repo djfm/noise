@@ -2,46 +2,23 @@ var Track = function(options)
 {
 	var my = this;
 
-	my.name = options.name;
-	my.measureCount = options.measureCount || 4;
-	my.beatsPerMeasure = options.beatsPerMeasure || 4;
-	my.notesPerBeat = options.notesPerBeat || 4;
-	my.maxOctave = options.maxOctave || 8;
-	my.minOctave = options.minOctave || 0;
+	my.config = {};
+
+	my.config.name = options.name;
+	my.config.measureCount = options.measureCount || 4;
+	my.config.beatsPerMeasure = options.beatsPerMeasure || 4;
+	my.config.notesPerBeat = options.notesPerBeat || 4;
+	my.config.maxOctave = options.maxOctave || 8;
+	my.config.minOctave = options.minOctave || 0;
 
 	my.segments = {};
 
 	my.notes = {};
 
-	my.instrument = options.instrument;
-
-	my.viewData = {
-		penMeasuresCount: options.penMeasuresCount || 0,
-		penBeatsCount: options.penBeatsCount || 1,
-		penNotesCount: options.penNotesCount || 0
-	};
-
-	my.canAddSegmentAt = function(i, len)
-	{
-		if(len === undefined)len = my.measureCount;
-
-		for(var s in my.segments)
-		{
-			s = parseInt(s);
-			var slen = my.segments[s];
-
-			if((i < s + slen) && (s < i + len))
-			{
-				return false;
-			}
-		}
-
-		return true;
-	};
+	my.config.instrument = options.instrument;
 
 	my.addSegmentAt = function(i, len)
 	{
-		if(len === undefined)len = my.measureCount;
 		my.segments[i] = len;
 	};
 
@@ -50,41 +27,8 @@ var Track = function(options)
 		delete my.segments[i];
 	};
 
-	my.canAddNoteAt = function(pos, semitone, len, except, with_lengths)
-	{
-		if(len === undefined)len = my.notesPerBeat;
-
-		for(var n in my.notes)
-		{
-			var t = parseInt(n);
-			var tlen;
-			if(tlen = my.notes[n][semitone])
-			{
-				if(with_lengths !== undefined && with_lengths[n] && with_lengths[n][semitone])
-				{
-					tlen = with_lengths[n][semitone];
-				}
-
-				// Don't care if note we check against is in except
-				if(!except || !except[n] || !except[n][semitone])
-				{
-					if((parseInt(pos) < t + tlen) && (t < parseInt(pos) + len))
-					{
-						//console.log("Overlap with ", n, semitone, "args:", arguments);
-						return false;
-					}
-				}
-			}
-		}
-
-		return true;
-	};
-
 	my.addNoteAt = function(pos, semitone, len)
 	{
-		//console.log("Adding note at", pos, semitone, "with len", len);
-		
-		if(len === undefined)len = my.notesPerBeat;
 		if(!my.notes[pos])my.notes[pos] = {};
 		my.notes[pos][semitone] = len;
 	};

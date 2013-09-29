@@ -96,12 +96,18 @@ span.date
 	font-size: 0.7vw;
 }
 
-div#pattern-view-container, div#sequencer-view-container
+div#pattern-view-container, div#sequencer-view-container, div#sequencer-track-handles-container, div#sequencer-history-container
 {
 	max-height: 400px;
+	min-height: 200px;
 	overflow: auto;
 	padding: 5px;
 	white-space: nowrap;
+}
+
+div#sequencer-track-handles-container
+{
+	overflow: hidden;
 }
 
 div.pattern-history
@@ -119,8 +125,7 @@ div.pattern-history:hover
 
 div.pattern-history.selected
 {
-	cursor: pointer;
-	background-color: #90CA77;
+	border: 2px solid black;
 }
 
 div.pattern-history a
@@ -132,4 +137,15 @@ div#pattern-history-container
 {
 	max-height: 400px;
 	overflow-y: auto;
+}
+
+div.track-handle
+{
+	border: 1px solid #ccc;
+	padding: 3px;
+}
+
+div.track-handle:not(:first-child)
+{
+	border-top: 0px;
 }

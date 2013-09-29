@@ -9,7 +9,7 @@ var PatternView = function(options)
 		var height = this.getHeight();
 		var width  = this.getWidth();
 
-		for(var o=this.model.maxOctave; o>=this.model.minOctave; o--)
+		for(var o=this.model.config.maxOctave; o>=this.model.config.minOctave; o--)
 		{
 			for(var s=11; s>=0; s--)
 			{
@@ -37,16 +37,16 @@ var PatternView = function(options)
 		* Draw the vertical lines
 		*/
 		var x = 1;
-		for(var m=0; m<this.model.measureCount; m++)
+		for(var m=0; m<this.model.config.measureCount; m++)
 		{
 			this.backgroundLayer.add(new Kinetic.Line({
 				points:[x, 0, x, height],
 				stroke: 'black',
-				strokeWidth: 2,
+				strokeWidth: 1,
 				listening: false
 			}));
 
-			for(var b=0; b<this.model.beatsPerMeasure; b++)
+			for(var b=0; b<this.model.config.beatsPerMeasure; b++)
 			{
 				if(b!=0)
 				{
@@ -57,7 +57,7 @@ var PatternView = function(options)
 						listening: false
 					}));
 				}
-				for(var n=0; n<this.model.notesPerBeat; n++)
+				for(var n=0; n<this.model.config.notesPerBeat; n++)
 				{
 					if(n!=0)
 					{
@@ -93,23 +93,8 @@ var PatternView = function(options)
 			options = {};
 		}
 
-		if(options.operationId)
-		{
-			if(my.snapshotsTaken[options.operationId])
-			{
-				// One snapshot per operation only!!
-				return;
-			}
-			else
-			{
-				my.snapshotsTaken[options.operationId] = true;
-			}
-		}
-
 		if(my.history)
 		{
-			my.makeSnapshotBeforeLoad = true;
-
 			var selection = {};
 			my.eachSelectedMark(function(i, j){
 				my.set2DArrayAt(selection, i, j, true);
@@ -140,21 +125,76 @@ var PatternView = function(options)
 		}
 	};
 
+	this.loadSnapshot = function(h)
+	{
+		my.removeAllMarks();
+
+		my.model.notes = JSON.parse(h.notes);
+		my.addModelNotesToView();
+
+
+		my.iterate2DArray(JSON.parse(h.selection), function(i, j){
+			my.selectMark(i, j);
+		});
+
+		my.marksLayer.draw();
+		my.selectionLayer.draw();
+		var scrollTo = my.RowColToXY(h.topLeftVisible.row, h.topLeftVisible.col);
+		$('#pattern-view-container').scrollTo({top: scrollTo.y, left: scrollTo.x}, 500);
+	};
+
+	this.addModelNotesToView = function()
+	{
+		this.iterate2DArray(this.model.notes, function(note, semitone, length){
+			var rc = my.noteSemitoneToRowCol(note, semitone);
+			my.addMarkAt(rc.row, rc.col, length);
+		});
+	};
+
+	this.noteSemitoneToRowCol = function(note, semitone)
+	{
+		return {
+			row: (my.model.config.maxOctave + my.model.config.minOctave) * 12 - 1 - semitone,
+			col: note
+		};
+	};
+
+	this.rowColToNoteSemitone = function(row, col)
+	{
+		return {
+			note: col,
+			semitone: (my.model.config.maxOctave + my.model.config.minOctave) * 12 - 1 - row
+		};
+	};
+
 	options.getCellsPerRowCount = function(track){
-		return track.measureCount * track.beatsPerMeasure * track.notesPerBeat;
+		return track.config.measureCount * track.config.beatsPerMeasure * track.config.notesPerBeat;
 	};
 
 	options.getRowCount = function(track)
 	{
-		return (track.maxOctave - track.minOctave + 1) * 12;
+		return (track.config.maxOctave - track.config.minOctave + 1) * 12;
 	};
 
 	options.onMarksAdded = function(marks, operationId){
-		my.makeSnapshot({operationId: operationId});
+		for(var i in marks)
+		{
+			var ns = my.rowColToNoteSemitone(marks[i].row, marks[i].col);
+			my.model.addNoteAt(ns.note, ns.semitone, marks[i].length);
+		}
 	};
 
 	options.onMarksRemoved = function(marks, operationId){
-		my.makeSnapshot({operationId: operationId});
+		for(var i in marks)
+		{
+			var ns = my.rowColToNoteSemitone(marks[i].row, marks[i].col);
+			my.model.removeNoteAt(ns.note, ns.semitone);
+		}
+	};
+
+	options.onOperationCompleted = function()
+	{
+		my.makeSnapshot();
 	};
 
 	options.onSelectionChanged = function(
@@ -163,7 +203,6 @@ var PatternView = function(options)
 		deselected, 
 		operationId
 		){
-		my.makeSnapshot({operationId: operationId});
 	};
 
 	var my = this;
@@ -177,6 +216,9 @@ var PatternView = function(options)
 
 	this.init(options);
 	this.drawGrid();
+
+	this.addModelNotesToView();
+	this.marksLayer.draw();
 };
 
 PatternView.prototype = new Grid();

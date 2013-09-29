@@ -28,15 +28,15 @@
 	</head>
 
 	<body ng-app>
-		<div class="row">
+		<div class="row" ng-controller="PatternController">
 			<div class="large-10 columns">
 				<div id="pattern-view-container">
 				</div>
 			</div>
-			<div id="pattern-history-container" class="large-2 columns" ng-controller="PatternController">
+			<div id="pattern-history-container" class="large-2 columns">
 				<div class="row" ng-repeat = "h in history.history">
 					<div class="large-12 columns">
-						<div class="pattern-history" ng-click="loadHistoryItem(h, $event)">
+						<div class="pattern-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem(h, $event)">
 							<span class="date">{{h.date}}</span>
 							<img src="{{h.image}}"></img>
 						</div>
@@ -45,9 +45,22 @@
 			</div>
 		</div>
 
-		<div class="row">
-			<div class="large-10 columns">
+		<div class="row" ng-controller="SequencerController">
+			<div class="large-2 columns">
+				<div id="sequencer-track-handles-container">
+					<div class="track-handle row collapse" style="height: {{cellHeight}}px" ng-repeat="handle in handles()">
+						<div class="small-12 columns">
+							{{handle.name}}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="large-8 columns">
 				<div id="sequencer-view-container">
+				</div>
+			</div>
+			<div class="large-2 columns">
+				<div id="sequencer-history-container">
 				</div>
 			</div>
 		</div>
@@ -77,11 +90,19 @@
 				song = new Song();
 			}
 
+			var track;
+
+			for(var i in song.tracks)
+			{
+				track = song.tracks[i];
+				break;
+			}
+
 			var history = new History();
 
 			var patternView = new PatternView({
 				container: 'pattern-view-container',
-				model: song.tracks['default'],
+				model: track,
 				history: history
 			});
 
@@ -96,6 +117,7 @@
 
 		
 		<script src="/js/pattern/controller.js"></script>
+		<script src="/js/sequencer/controller.js"></script>
 
 	</body>
 </html>
