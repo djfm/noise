@@ -14,7 +14,15 @@ var Song = function(options)
 		new Track({name: 'chorus'})
 	];
 
+	my.history  = options.history || new History();
+
 	my.segments = {};
+
+	my.addTrack = function()
+	{
+		my.tracks.push(new Track({name: '(unnamed)'}));
+		return my.tracks.length - 1;
+	};
 
 	my.addSegmentAt = function(track, measure, length)
 	{
@@ -29,7 +37,18 @@ var Song = function(options)
 
 	my.serialize = function()
 	{
-		return JSON.stringify(this);
+		var tracks = [];
+		for(var t in my.tracks)
+		{
+			tracks.push(my.tracks[t].preSerialize());
+		}
+		return JSON.stringify({
+			tracks: tracks,
+			activeTrack: this.activeTrack,
+			name: my.name,
+			segments: my.segments,
+			history: my.history.preSerialize()
+		});
 	};
 
 	my.getMeasureCount = function()
@@ -55,27 +74,32 @@ var Song = function(options)
 	};
 };
 
+function constructify(constructor, object)
+{
+	var instance = new constructor(object);
+	for(var i in object)
+	{
+		instance[i] = object[i];
+	}
+	return instance;
+}
+
+function decodeAs(constructor, json)
+{
+	var object = JSON.parse(json);
+	return constructify(constructor, object);
+};
+
 Song.deserialize = function(json)
 {
-	var s = new Song({});
+	var song = decodeAs(Song, json);
 
-	var songObj = JSON.parse(json);
-
-	for(var p in songObj)
+	for(var t in song.tracks)
 	{
-		s[p] = songObj[p];
+		song.tracks[t] = constructify(Track, song.tracks[t]);
+		song.tracks[t].history = constructify(History, song.tracks[t].history);
+		song.history = constructify(History, song.history);
 	}
 
-	for(var t in s.tracks)
-	{
-		var trackObj = s.tracks[t];
-		s.tracks[t] = new Track({});
-
-		for(var p in trackObj)
-		{
-			s.tracks[t][p] = trackObj[p];
-		}
-	}
-
-	return s;
+	return song;
 };

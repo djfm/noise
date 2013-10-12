@@ -2,16 +2,15 @@ var Grid = function()
 {
 	var my;
 
-	this.init = function(options)
+	this.initGrid = function(options)
 	{
 		my = this;
 
+		this.markColor = options.markColor || 'blue';
 
 		this.container = options.container;
 
 		this.model = options.model;
-
-		this.history   = options.history || this.model.history;
 
 		this.cellWidth  = options.cellWidth;
 		this.cellHeight = options.cellHeight;
@@ -53,8 +52,6 @@ var Grid = function()
 
 		this.backgroundLayer = new Kinetic.Layer();
 		this.stage.add(this.backgroundLayer);
-
-		this.eventsReceiverLayer = new Kinetic.Layer();
 
 		this.eventsLayer = new Kinetic.Layer();
 		this.eventsReceiver = new Kinetic.Rect({
@@ -950,7 +947,7 @@ var Grid = function()
 			y: xy.y + 1,
 			width: this.cellWidth*length - 2,
 			height: this.cellHeight - 2,
-			fill: 'blue',
+			fill: this.markColor,
 			opacity: 0.7,
 			stroke: 'black',
 			strokeWidth: 1
@@ -1045,7 +1042,7 @@ var Grid = function()
 			options = {};
 		}
 
-		if(my.history)
+		if(my.model.history)
 		{
 			var selection = {};
 			my.eachSelectedMark(function(i, j){
@@ -1073,7 +1070,7 @@ var Grid = function()
 				controller: 'PatternView'
 			};
 
-			my.history.record(h, options);
+			my.model.history.record(h, options);
 		}
 	};
 

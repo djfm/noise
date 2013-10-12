@@ -1,5 +1,5 @@
 {
-	"name": "fmdj.fr",
+	"name": "noise.fmdj.fr",
 	"description": "my simple website",
 	"version": "0.0.1",
 	"private": true,
@@ -7,6 +7,12 @@
 		"express": "3.x",
 		"winston": "x",
 		"consolidate": "x",
-		"mustache": "x"
+		"mustache": "x",
+		"jugglingdb": "0.2.x",
+		"jugglingdb-mysql": "latest",
+		"passport": "x",
+		"passport-facebook": "x",
+		"passport-local": "x",
+		"bcrypt": "x"
 	}
 }

@@ -1,3 +1,23 @@
+span.gentle-warning
+{
+	display: block;
+	margin: 0px 0px 10px 0px;
+	color: rgb(255, 112, 0);
+}
+
+button.postfix
+{
+	padding: 0px;
+}
+
+select.infix
+{
+	margin:0;
+	height:32px;
+	border: 1px solid #ccc;
+}
+
+
 div#instrument
 {
 	border:1px solid #ccc;
@@ -6,7 +26,6 @@ div#instrument
 
 body
 {
-	margin-top: 20px;
 }
 
 textarea#score
@@ -52,19 +71,9 @@ div.preset-actions a
 {
 }
 
-.nomargin
+.nomargin, input.nomargin
 {
 	margin: 0px;
-}
-
-.no-margin-bottom
-{
-	margin-bottom: 0px;
-}
-
-form.custom .custom.dropdown.no-margin-bottom
-{
-	margin-bottom: 0px;
 }
 
 .nopadding
@@ -113,6 +122,7 @@ div.pattern-history, div.sequencer-history
 	border: 1px solid #CCC;
 	padding: 5px;
 	margin-bottom: 5px;
+	background-color: white;
 }
 
 div.pattern-history:hover, div.sequencer-history:hover
@@ -155,4 +165,42 @@ div.track-handle
 div.track-handle:not(:first-child)
 {
 	border-top: 0px;
+}
+
+div.track-handle.active
+{
+	background-color: #CCC;
+}
+
+div.track-handle.over
+{
+	background-color: #BBB;
+}
+
+.hidden
+{
+	display: none;
+}
+
+.not-hidden
+{
+	display: inherit;
+}
+
+div.postfix-img-holder
+{
+}
+
+div.postfix-img-holder div
+{
+}
+
+div.postfix-img-holder img
+{
+	padding-left: 2px;
+}
+
+.clickable
+{
+	cursor: pointer;
 }

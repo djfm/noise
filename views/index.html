@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 
+{{=[[ ]]=}}
+
 <html>
 	<head>
 
@@ -7,23 +9,118 @@
 		<link rel="stylesheet" href="http://noise.fmdj.fr/assets/foundation/css/foundation.min.css"></link>
 		
 		<link rel="stylesheet" href="/css/main.css"></link>
+		<link rel="stylesheet" href="/css/register.css"></link>
 
-
-
-		<script src="/js/vendor/jquery-2.0.3.min.js"></script>
-		<script src="/js/vendor/jquery.scrollTo.min.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/vendor/custom.modernizr.js"></script>
-		<script src="http://noise.fmdj.fr/assets/foundation/js/foundation/foundation.js"></script>
 		<script src="http://noise.fmdj.fr/assets/kinetic.min.js"></script>
 		<script src="/js/vendor/angular.js"></script>
-
-		<style type="text/css">
-			
-		</style>
-
 	</head>
 
-	<body ng-app>
+	<body ng-app="Noise">
+
+		<div ng-controller="Auth">
+			<nav class="top-bar">
+				<ul class="title-area">
+					<li class="name">
+						<h1><a href="/">NOISE</a></h1>
+					</li>
+				</ul>
+				<section class="top-bar-section">
+					<ul ng-show="!loggedIn()" class="right">
+						<li class="has-form">
+							<a ng-click="hideRegisterFields()" class="button success small">Login</a>
+						</li>
+						<li class="has-form">
+							<a ng-click="showRegisterFields()" class="button small">Register</a>
+						</li>
+					</ul>
+					<ul ng-show="loggedIn()" class="right">
+						<li>
+							<a style="cursor: default">Yo, {{getUsername()}}!</a>
+						</li>
+						<li>
+							<a ng-click="logout()">[logout]</a>
+						</li>
+					</ul>
+				</section>
+			</nav>
+			<div ng-show="!loggedIn()" id="auth-form" class="hidden {{formHidden}}">
+				<form class="nomargin" ng-submit="submit()">
+					<div class="row collapse">
+						<div class="large-6 columns"><label for="username" class="prefix">Username</label></div>
+						<div class="large-6 columns"><input required id="username" ng-model="username" ng-change="checkUserName()" class="nomargin" type="text"></input></div>
+					</div>
+					<div class="row collapse" ng-show="!usernameAvailable">
+						<div class="large-12 columns">
+							<span class="gentle-warning">Username is already taken!</span>
+						</div>
+					</div>
+					<div ng-show="registering" class="row collapse">
+						<div class="large-6 columns"><label for="email" class="prefix">E-mail</label></div>
+						<div class="large-6 columns"><input ng-required="registering" id="email" ng-model="email" ng-change="checkEmail()" class="nomargin" type="text"></input></div>
+					</div>
+					<div class="row collapse" ng-show="!emailAvailable">
+						<div class="large-12 columns">
+							<span class="gentle-warning">Email is already taken!</span>
+						</div>
+					</div>
+					<div class="row collapse">
+						<div class="large-6 columns"><label for="password" class="prefix">Password</label></div>
+						<div class="large-6 columns"><input required id="password" ng-model="password" class="nomargin" type="password"></input></div>
+					</div>
+					<div ng-show="registering" class="row collapse">
+						<div class="large-6 columns"><label for="confirm" class="prefix">Confirm</label></div>
+						<div class="large-6 columns"><input ng-required="registering" id="confirm" ng-model="confirm" class="nomargin" type="password"></input></div>
+					</div>
+					<div class="row collapse" ng-show="confirmIsValid() == -1">
+						<div class="large-12 columns">
+							<span class="gentle-warning">Passwords don't match!</span>
+						</div>
+					</div>
+					<div class="row collapse">
+						<div class="large-12 columns">
+							<button style="width: 100%; margin: 0px" class="small">Go!</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div ng-show="loggedIn()" class="row" ng-controller="SongController">
+			<div class="large-4 columns">
+				<div class="row collapse">
+					<form ng-submit="load()">
+						<div class="large-3 columns">
+							<label for="songToLoad" class="prefix">Load song</label>
+						</div>
+						<div class="large-7 columns">
+							<select id="songToLoad" name="songToLoad" ng-model="songToLoad" class="infix" ng-model="song" ng-options="value as value for (k, value) in songs"></select>
+						</div>
+						<div class="large-2 columns">
+							<button class="postfix success">Load!</button>
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class="large-4 columns">
+				<div class="row collapse">
+					<form ng-submit="saveAs()">
+						<div class="large-3 columns">
+							<label for="saveAsName" class="prefix">Save as</label>
+						</div>
+						<div class="large-7 columns">
+							<input required id="saveAsName" ng-model="saveAsName" type="text"></input>
+						</div>
+						<div class="large-2 columns">
+							<button class="postfix">Save!</a>
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class="large-4 columns">
+				&nbsp;
+			</div>
+		</div>
+
 		<div class="row" ng-controller="PatternController">
 			<div class="large-10 columns">
 				<div id="pattern-view-container" class="pattern">
@@ -40,85 +137,133 @@
 				</div>
 			</div>
 		</div>
-
-		<div id="sequencer-row" class="row" ng-controller="SequencerController">
-			<div class="large-2 columns">
-				<div id="sequencer-track-handles-container sequencer">
-					<div ng-click="activateTrack($index)" class="track-handle row collapse" style="height: {{cellHeight}}px" ng-repeat="handle in handles()">
-						<div class="small-12 columns">
-							{{handle.name}}
+		<div id="sequencer-row" ng-controller="SequencerController">
+			<div class="row">
+				<div class="large-2 columns">
+					<button ng-click="addTrack()" class="success small">Add track</button>
+				</div>
+			</div>
+			<div class="row">
+				<div class="large-10 columns">
+					<div class="row collapse">
+						<div class="large-3 columns">
+							<div id="sequencer-track-handles-container" class="sequencer">
+								<div ng-click="activateTrack($index)" class="{{handle.active ? 'active' : ''}} track-handle row collapse" style="height: {{cellHeight}}px" ng-repeat="handle in handles()" draggable droppable transfer="{{$index}}" drop="handleDropped($index, $transfer)">
+									<div class="large-11 columns">
+										{{handle.name}}
+									</div>
+									<div class="large-1 columns">
+										<img class="clickable" ng-click="removeTrack($index)" src="/img/remove.png">
+									</div>
+								</div>
+								<div style="height:50px;">
+									&nbsp;
+								</div>
+							</div>
+							
+						</div>
+						<div class="large-9 columns">
+							<div class="sequencer" id="sequencer-view-container">
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-			<div class="large-8 columns">
-				<div class="sequencer" id="sequencer-view-container">
-				</div>
-			</div>
-			<div id="sequencer-history-container" class="sequencer large-2 columns">
-				<div class="row" ng-repeat = "h in history.history">
-					<div class="large-12 columns">
-						<div class="sequencer-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem(h, $event)">
-							<span class="date">{{h.date}}</span>
-							<img src="{{h.image}}"></img>
+				
+				<div id="sequencer-history-container" class="sequencer large-2 columns">
+					<div class="row" ng-repeat = "h in history.history">
+						<div class="large-12 columns">
+							<div class="sequencer-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem(h, $event)">
+								<span class="date">{{h.date}}</span>
+								<img src="{{h.image}}"></img>
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 
+		<script type="text/javascript">
+			var app 	 = angular.module('Noise', ['dnd', 'fmUtil']);
+
+			app.service('loginInfo', function(){
+				var username  = '[[username]]';
+				var logged_in = (username !== '');
+				var on_logins = {};
+
+				return {
+					loggedIn: function()
+					{
+						return logged_in;
+					},
+					login: function(name)
+					{
+						username  = name;
+						logged_in = true;
+						for(var h in on_logins)
+						{
+							on_logins[h](username);
+						}
+					},
+					logout: function()
+					{
+						username = '';
+						logged_in = false;
+					},
+					getUsername: function()
+					{
+						return username;
+					},
+					onLogin: function(handleName, callback)
+					{
+						on_logins[handleName] = callback;
+						if(logged_in)
+						{
+							callback(username);
+						}
+					}
+				};
+			});
+
+		</script>
+
+		<script src="/js/vendor/jquery-2.0.3.min.js"></script>
+		<script src="/js/vendor/jquery.scrollTo.min.js"></script>
+		<script src="/js/angular-dnd.js"></script>
+		<script src="/js/angular-util.js"></script>
 		<script src="/js/solfege.js"></script>
-		<script src="/js/kinetic/util.js"></script>
 		<script src="/js/components.js"></script>
 		<script src="/js/song.js"></script>
-		<script src="/js/track.js"></script>
+		<script src="/js/track/track.js"></script>
 		<script src="/js/history.js"></script>
 		<script src="/js/grid.js"></script>
 		<script src="/js/pattern/view.js"></script>
 		<script src="/js/sequencer/view.js"></script>
+		<script src="/js/util.js"></script>
+		<script src="/js/auth.js"></script>
+		<script src="/js/songController.js"></script>
 
 		<script type="text/javascript">
-			var song;
-
-			var songs = JSON.parse(localStorage.getItem('songs'));
-			for(var s in songs)
+			function loadSong()
 			{
-				song = Song.deserialize(songs[s]);
-				break;
+
 			}
-
-			if(song === undefined)
-			{
-				song = new Song();
-			}
-
-			var track;
-
-			for(var i in song.tracks)
-			{
-				track = song.tracks[i];
-				break;
-			}
-
-			var sequencerHistory = new History();
-
-			sequencerHistory.onRecord = function()
-			{
-				$('div.sequencer-history.selected').removeClass('selected');
-			};
+			var song = Song.deserialize((new Song()).serialize());
 
 			var patternView = new PatternView({
 				container: 'pattern-view-container',
-				model: track
+				model: song.tracks[0]
 			});
 
 			var sequencerView = new SequencerView({
 				container: 'sequencer-view-container',
+				patternView: patternView,
 				cellWidth: 50,
 				cellHeight: 38,
-				model: song,
-				history: sequencerHistory
+				markColor: '#333',
+				model: song
 			});
+
+			//console.log(sequencerView.model.serialize());
 
 		</script>
 

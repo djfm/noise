@@ -93,18 +93,24 @@ var PatternView = function(options)
 			|| 	model.beatsPerMeasure != this.model.beatsPerMeasure
 			|| 	model.measureCount != this.model.measureCount;
 
-		console.log(this.model.history);
-
 		var scope = this.model.history.scope;
 
-		this.removeAllMarks();
 		this.model = model;
-		if(needToRedrawGrid)
+
+		if(this.model.history && this.model.history.history.length > 0)
 		{
-			this.drawGrid();
+			this.loadSnapshot(this.model.history.history[0]);
 		}
-		this.addModelDataToView();
-		this.marksLayer.draw();
+		else
+		{
+			this.removeAllMarks();
+			if(needToRedrawGrid)
+			{
+				this.drawGrid();
+			}
+			this.addModelDataToView();
+			this.marksLayer.draw();
+		}
 
 		scope.history = this.model.history;
 		this.model.history.scope = scope;
@@ -136,7 +142,7 @@ var PatternView = function(options)
 	};
 
 	this.getCellsPerRowCount = function(){
-		return my.model.config.measureCount * my.model.config.beatsPerMeasure * track.config.notesPerBeat;
+		return my.model.config.measureCount * my.model.config.beatsPerMeasure * my.model.config.notesPerBeat;
 	};
 
 	this.getRowCount = function()
@@ -185,12 +191,10 @@ var PatternView = function(options)
 
 	var my = this;
 
-	this.snapshotsTaken = {};
-
 	this.noteWidth 	= options.cellWidth  = 30;
 	this.noteHeight = options.cellHeight = 18;
 
-	this.init(options);
+	this.initGrid(options);
 	this.drawGrid();
 
 	this.addModelDataToView();

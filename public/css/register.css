@@ -1,0 +1,26 @@
+div#register
+{
+	background-color: #F2FFC8;
+	padding:5px;
+	margin-bottom: 15px;
+	border-radius: 5px;
+	border: 1px solid black;
+}
+
+div#welcome
+{
+	float:right;
+	margin-bottom: 15px;
+}
+
+div#auth-form
+{
+	position: absolute;
+	right: 10px;
+	top: 50px;
+	border: 1px solid #CCC;
+	z-index:10;
+	background-color: white;
+	padding: 5px;
+	border-radius: 5px;
+}
