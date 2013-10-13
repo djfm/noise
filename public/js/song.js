@@ -35,20 +35,32 @@ var Song = function(options)
 		delete my.segments[track][measure];
 	};
 
-	my.serialize = function()
+	my.serialize = function(options)
 	{
+		if(options === undefined)
+		{
+			options = {};
+		}
+
 		var tracks = [];
 		for(var t in my.tracks)
 		{
 			tracks.push(my.tracks[t].preSerialize());
 		}
-		return JSON.stringify({
+
+		var obj = {
 			tracks: tracks,
 			activeTrack: this.activeTrack,
 			name: my.name,
-			segments: my.segments,
-			history: my.history.preSerialize()
-		});
+			segments: my.segments
+		};
+
+		if(options.history !== false)
+		{
+			obj.history = my.history.preSerialize();
+		}
+
+		return JSON.stringify(obj);
 	};
 
 	my.getMeasureCount = function()
@@ -98,7 +110,10 @@ Song.deserialize = function(json)
 	{
 		song.tracks[t] = constructify(Track, song.tracks[t]);
 		song.tracks[t].history = constructify(History, song.tracks[t].history);
-		song.history = constructify(History, song.history);
+		if(song.history)
+		{
+			song.history = constructify(History, song.history);
+		}
 	}
 
 	return song;

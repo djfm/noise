@@ -93,8 +93,6 @@ var PatternView = function(options)
 			|| 	model.beatsPerMeasure != this.model.beatsPerMeasure
 			|| 	model.measureCount != this.model.measureCount;
 
-		var scope = this.model.history.scope;
-
 		this.model = model;
 
 		if(this.model.history && this.model.history.history.length > 0)
@@ -111,10 +109,6 @@ var PatternView = function(options)
 			this.addModelDataToView();
 			this.marksLayer.draw();
 		}
-
-		scope.history = this.model.history;
-		this.model.history.scope = scope;
-		my.history = this.model.history;
 	};
 
 	this.addModelDataToView = function()
@@ -169,6 +163,7 @@ var PatternView = function(options)
 	this.onOperationCompleted = function()
 	{
 		my.makeSnapshot();
+		my.sequencerService.updatePatternScope();
 	};
 
 	this.getModelData = function()
@@ -181,15 +176,9 @@ var PatternView = function(options)
 		my.model.notes = data;
 	};
 
-	this.onSelectionChanged = function(
-		currentSelection,
-		newlySelected,
-		deselected, 
-		operationId
-		){
-	};
-
 	var my = this;
+
+	this.sequencerService = options.sequencerService;
 
 	this.noteWidth 	= options.cellWidth  = 30;
 	this.noteHeight = options.cellHeight = 18;

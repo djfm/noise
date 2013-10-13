@@ -1067,7 +1067,6 @@ var Grid = function()
 				selection: JSON.stringify(selection),
 				image: data,
 				topLeftVisible: topLeftVisible,
-				controller: 'PatternView'
 			};
 
 			my.model.history.record(h, options);

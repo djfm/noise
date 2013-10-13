@@ -15,16 +15,13 @@ var History = function(){
 		{
 			this.onRecord(h);
 		}
-		
-		if(this.scope && options.apply !== false)
-		{
-			this.scope.$apply();
-		}
 	};
 
 	this.preSerialize = function()
 	{
 		var h = new History();
+		h.at = this.at;
+
 		for(var i in this.history)
 		{
 			var item = {};

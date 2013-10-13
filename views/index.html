@@ -127,7 +127,7 @@
 				</div>
 			</div>
 			<div id="pattern-history-container" class="large-2 columns pattern">
-				<div class="row" ng-repeat = "h in history.history">
+				<div class="row" ng-repeat = "h in history().history">
 					<div class="large-12 columns">
 						<div class="pattern-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem(h, $event)">
 							<span class="date">{{h.date}}</span>
@@ -170,9 +170,9 @@
 				</div>
 				
 				<div id="sequencer-history-container" class="sequencer large-2 columns">
-					<div class="row" ng-repeat = "h in history.history">
+					<div class="row" ng-repeat = "h in history().history">
 						<div class="large-12 columns">
-							<div class="sequencer-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem(h, $event)">
+							<div class="sequencer-history {{ $index==0 ? 'selected' : ''}}" ng-click="loadHistoryItem($index, h, $event)">
 								<span class="date">{{h.date}}</span>
 								<img src="{{h.image}}"></img>
 							</div>
@@ -241,33 +241,6 @@
 		<script src="/js/util.js"></script>
 		<script src="/js/auth.js"></script>
 		<script src="/js/songController.js"></script>
-
-		<script type="text/javascript">
-			function loadSong()
-			{
-
-			}
-			var song = Song.deserialize((new Song()).serialize());
-
-			var patternView = new PatternView({
-				container: 'pattern-view-container',
-				model: song.tracks[0]
-			});
-
-			var sequencerView = new SequencerView({
-				container: 'sequencer-view-container',
-				patternView: patternView,
-				cellWidth: 50,
-				cellHeight: 38,
-				markColor: '#333',
-				model: song
-			});
-
-			//console.log(sequencerView.model.serialize());
-
-		</script>
-
-		
 		<script src="/js/pattern/controller.js"></script>
 		<script src="/js/sequencer/controller.js"></script>
 

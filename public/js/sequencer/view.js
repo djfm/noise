@@ -65,7 +65,71 @@ var SequencerView = function(options)
 	this.setModelData = function(data)
 	{
 		this.model.segments = data;
-	}
+	};
+
+	this.makeSnapshot = function(options)
+	{
+		if(options === undefined)
+		{
+			options = {};
+		}
+
+		if(my.model.history)
+		{
+
+			my.model.history.at = 0;
+
+			var selection = {};
+			my.eachSelectedMark(function(i, j){
+				my.set2DArrayAt(selection, i, j, true);
+			});
+
+			var container = $('#' + this.container);
+
+			var data = my.marksLayer.toDataURL({
+				mimeType: 'image/png',
+				quality: 0,
+				x: container.scrollLeft(),
+				y: container.scrollTop(),
+				width: container.width(),
+				height: container.height()
+			});
+
+			var topLeftVisible = my.XYtoRowCol(container.scrollLeft(), container.scrollTop());
+
+			var h = {
+				image: data,
+				selection: JSON.stringify(selection),
+				topLeftVisible: topLeftVisible,
+				song: my.model.serialize({history: false})
+			};
+
+			my.model.history.record(h, options);
+
+			if(options.apply !== false)
+			{
+				my.sequencerService.updateSequencerScope();
+			}
+		}
+	};
+
+	this.loadSnapshot = function(h)
+	{
+		var model = Song.deserialize(h.song);
+		model.history = this.model.history;
+
+		this.setModel(model);
+
+
+		my.iterate2DArray(JSON.parse(h.selection), function(i, j){
+			my.selectMark(i, j);
+		});
+
+		my.marksLayer.draw();
+
+		var scrollTo = my.RowColToXY(h.topLeftVisible.row, h.topLeftVisible.col);
+		$('#'+my.container).scrollTo({top: scrollTo.y, left: scrollTo.x}, 500);
+	};
 
 	this.addModelDataToView = function()
 	{
@@ -99,9 +163,9 @@ var SequencerView = function(options)
 		{
 			this.model.tracks[i].config.active = undefined;
 		}
-		this.activeTrack = track;
+		this.model.activeTrack = track;
 		this.patternView.setModel(this.model.tracks[track]);
-		this.model.tracks[this.activeTrack].config.active = true;
+		this.model.tracks[this.model.activeTrack].config.active = true;
 	};
 
 	this.storeActiveTrackNumber = function()
@@ -110,7 +174,7 @@ var SequencerView = function(options)
 		{
 			if(this.model.tracks[i].config.active === true)
 			{
-				this.activeTrack = i;
+				this.model.activeTrack = i;
 				break;
 			}
 		}
@@ -118,17 +182,15 @@ var SequencerView = function(options)
 
 	this.setModel = function(model)
 	{
-		var scope = this.model.history.scope;
 		options.model = model;
 		this.init(options);
-		this.model.history.scope = scope;
-		scope.history = this.model.history;
 
-		this.activateTrack(this.activeTrack || 0);
+		this.activateTrack(this.model.activeTrack || 0);
 	};
 
 	this.init = function(options)
 	{
+		this.sequencerService = options.sequencerService;
 		this.patternView = options.patternView;
 		this.initGrid(options);
 		this.drawGrid();
@@ -139,32 +201,41 @@ var SequencerView = function(options)
 		};
 
 		this.addModelDataToView();
-		this.marksLayer.draw();
 
+		if(options.draw !== false)
+		{
+			this.marksLayer.draw();
+		}
 	};
 
 	this.swapTracks = function(a, b)
 	{
 		if(a != b)
 		{
-			var tmp = this.model.tracks[a];
-			this.model.tracks[a] = this.model.tracks[b];
-			this.model.tracks[b] = tmp;
+			var tmp = my.model.tracks[a];
+			my.model.tracks[a] = my.model.tracks[b];
+			my.model.tracks[b] = tmp;
 
-			this.removeAllMarks();
-			tmp = this.model.segments[a];
-			this.model.segments[a] = this.model.segments[b];
-			this.model.segments[b] = tmp;
-			this.addModelDataToView();
-			this.marksLayer.draw();
-			this.makeSnapshot({apply: false});
-			this.storeActiveTrackNumber();
+			my.removeAllMarks();
+			tmp = my.model.segments[a];
+			my.model.segments[a] = my.model.segments[b];
+			my.model.segments[b] = tmp;
+			my.addModelDataToView();
+			my.marksLayer.draw();
+			my.makeSnapshot({apply: false});
+			my.storeActiveTrackNumber();
 		}
 	};
 
 	this.removeTrack = function(id)
 	{
 		id = parseInt(id);
+
+		var activate = undefined;
+		if(this.model.tracks[id].config.active)
+		{
+			activate = id > 0 ? (id-1) : 0;
+		}
 
 		this.removeAllMarks();
 		
@@ -180,9 +251,17 @@ var SequencerView = function(options)
 		this.drawGrid();
 		this.addModelDataToView();
 		this.marksLayer.draw();
-		this.makeSnapshot({apply: false});
-		this.storeActiveTrackNumber();
 
+		if(activate !== undefined)
+		{
+			this.activateTrack(activate);
+		}
+		else
+		{
+			this.storeActiveTrackNumber();
+		}
+
+		this.makeSnapshot({apply: false});
 	};
 
 	this.addTrack = function()

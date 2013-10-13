@@ -1,14 +1,11 @@
-function PatternController($scope)
+function PatternController($scope, sequencer)
 {
-	$scope.history = patternView.model.history;
-	$scope.history.scope  = $scope;
+	$scope.history = sequencer.patternHistory;
 
-	$scope.loadHistoryItem = function(h, event)
+	sequencer.updatePatternScope = function()
 	{
-		$('div.pattern-history.selected').removeClass('selected');
-		$(event.target).closest('div.pattern-history').addClass('selected');
-		
-
-		patternView.loadSnapshot(h);
+		$scope.$apply();
 	};
+
+	$scope.loadHistoryItem = sequencer.loadPatternHistoryItem;
 };
