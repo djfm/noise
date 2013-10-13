@@ -2,6 +2,8 @@ var PatternView = function(options)
 {
 	this.drawGrid = function()
 	{
+		if(!this.model)return;
+
 		/*
 		* Draw the rows
 		*/
@@ -88,12 +90,17 @@ var PatternView = function(options)
 
 	this.setModel = function(model)
 	{
-		var needToRedrawGrid = 
-				model.notesPerBeat != this.model.notesPerBeat
+		var needToRedrawGrid = !this.model
+			||	model.notesPerBeat != this.model.notesPerBeat
 			|| 	model.beatsPerMeasure != this.model.beatsPerMeasure
 			|| 	model.measureCount != this.model.measureCount;
 
-		this.model = model;
+		this.model = options.model = model;
+
+		if(!this.marksLayer)
+		{
+			this.initGrid(options);
+		}
 
 		if(this.model.history && this.model.history.history.length > 0)
 		{
@@ -113,6 +120,8 @@ var PatternView = function(options)
 
 	this.addModelDataToView = function()
 	{
+		if(!this.model)return;
+
 		this.iterate2DArray(this.getModelData(), function(note, semitone, length){
 			var rc = my.noteSemitoneToRowCol(note, semitone);
 			my.addMarkAt(rc.row, rc.col, length);
@@ -183,11 +192,14 @@ var PatternView = function(options)
 	this.noteWidth 	= options.cellWidth  = 30;
 	this.noteHeight = options.cellHeight = 18;
 
-	this.initGrid(options);
-	this.drawGrid();
+	if(this.model)
+	{
+		this.initGrid(options);
+		this.drawGrid();
 
-	this.addModelDataToView();
-	this.marksLayer.draw();
+		this.addModelDataToView();
+		this.marksLayer.draw();
+	}
 };
 
 PatternView.prototype = new Grid();

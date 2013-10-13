@@ -1,4 +1,4 @@
-app.controller('SongController', function($scope, $http, loginInfo)
+app.controller('SongController', function($scope, $http, loginInfo, sequencer)
 {
 	$scope.loggedIn = loginInfo.loggedIn;
 
@@ -14,8 +14,8 @@ app.controller('SongController', function($scope, $http, loginInfo)
 	{
 		if($scope.saveAsName)
 		{
-			sequencerView.model.name = $scope.saveAsName;
-			var data = sequencerView.model.serialize();
+			sequencer.getSong().name = $scope.saveAsName;
+			var data = sequencer.getSong().serialize();
 			$http.post('/songs/', {name: $scope.saveAsName, data: data})
 			.then(function(reply){
 				if(reply.data.success === false)
@@ -38,7 +38,7 @@ app.controller('SongController', function($scope, $http, loginInfo)
 		$http.get('/my-songs/'+encodeURIComponent($scope.songToLoad)).then(function(reply){
 			var song = Song.deserialize(reply.data.jsonData);
 
-			sequencerView.setModel(song);
+			sequencer.loadSong(song);
 		});
 
 		$scope.saveAsName = $scope.songToLoad;

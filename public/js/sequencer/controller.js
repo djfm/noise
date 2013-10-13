@@ -42,7 +42,6 @@ app.service('sequencer', function(){
 	var patternView = new PatternView({
 				container: 'pattern-view-container',
 				sequencerService: service,
-				model: song.tracks[0]
 			});
 
 	var sequencerView = new SequencerView({
@@ -52,8 +51,9 @@ app.service('sequencer', function(){
 		cellHeight: 38,
 		markColor: '#333',
 		sequencerService: service,
-		model: song
 	});
+
+	sequencerView.setModel(song);
 
 	service.patternHistory = function()
 	{
@@ -119,6 +119,16 @@ app.service('sequencer', function(){
 	service.addTrack = function()
 	{
 		sequencerView.addTrack();
+	};
+
+	service.loadSong = function(song)
+	{
+		sequencerView.setModel(song);
+	};
+
+	service.getSong = function()
+	{
+		return sequencerView.model;
 	};
 
 	service.swapTracks = sequencerView.swapTracks;

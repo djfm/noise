@@ -6,6 +6,8 @@ var Grid = function()
 	{
 		my = this;
 
+		if(!my.model)return;
+
 		this.markColor = options.markColor || 'blue';
 
 		this.container = options.container;

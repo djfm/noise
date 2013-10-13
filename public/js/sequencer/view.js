@@ -4,7 +4,7 @@ var SequencerView = function(options)
 	
 	this.drawGrid = function()
 	{
-		//this.backgroundLayer.removeChildren();
+		if(!my.model)return;
 
 		var y = 0;
 		var w = this.getWidth();
@@ -182,7 +182,7 @@ var SequencerView = function(options)
 
 	this.setModel = function(model)
 	{
-		options.model = model;
+		this.model = options.model = model;
 		this.init(options);
 
 		this.activateTrack(this.model.activeTrack || 0);
@@ -192,19 +192,23 @@ var SequencerView = function(options)
 	{
 		this.sequencerService = options.sequencerService;
 		this.patternView = options.patternView;
-		this.initGrid(options);
-		this.drawGrid();
-
-		this.model.history.onRecord = function()
+		
+		if(this.model)
 		{
-			$('div.sequencer-history.selected').removeClass('selected');
-		};
+			this.initGrid(options);
+			this.drawGrid();
 
-		this.addModelDataToView();
+			this.model.history.onRecord = function()
+			{
+				$('div.sequencer-history.selected').removeClass('selected');
+			};
 
-		if(options.draw !== false)
-		{
-			this.marksLayer.draw();
+			this.addModelDataToView();
+
+			if(options.draw !== false)
+			{
+				this.marksLayer.draw();
+			}
 		}
 	};
 
