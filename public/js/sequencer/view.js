@@ -186,6 +186,11 @@ var SequencerView = function(options)
 		this.init(options);
 
 		this.activateTrack(this.model.activeTrack || 0);
+
+		if(this.model.history.history.length === 0)
+		{
+			this.makeSnapshot({apply: false});
+		}
 	};
 
 	this.init = function(options)
@@ -205,11 +210,39 @@ var SequencerView = function(options)
 
 			this.addModelDataToView();
 
+			this.initBar();
+			this.drawBar();
+
 			if(options.draw !== false)
 			{
 				this.marksLayer.draw();
 			}
 		}
+	};
+
+	this.initBar = function()
+	{
+		if(this.bar)
+		{
+			this.bar.remove();
+		}
+
+		this.bar = new Kinetic.Rect({
+			x:0,
+			y:0,
+			width: 10,
+			height: this.getHeight(),
+			opacity: 0.5,
+			fill: 'black',
+			strokeWidth: 0
+		});
+
+		this.backgroundLayer.add(this.bar);
+	};
+
+	this.drawBar = function()
+	{
+		this.backgroundLayer.draw();
 	};
 
 	this.swapTracks = function(a, b)
@@ -280,6 +313,115 @@ var SequencerView = function(options)
 		this.makeSnapshot({apply: false});
 
 		return id;
+	};
+
+	this.patternChanged = function(h, options)
+	{
+		if(this.model.history.at === 0)
+		{
+			// Rewrite history
+			var song  		 = JSON.parse(this.model.history.history[0].song);
+			var trackHistory = song.tracks[this.model.activeTrack].history;
+			
+			History.record(trackHistory, h);
+
+			this.model.history.history[0].song = JSON.stringify(song);
+		}
+		else
+		{
+			// record the change in the Song object
+			this.makeSnapshot();
+		}
+	};
+
+	this.trackConfigChanged = function()
+	{
+		if(this.model.history.at === 0)
+		{
+			// Rewrite history
+			var song  		 = JSON.parse(this.model.history.history[0].song);
+			
+			song.tracks[this.model.activeTrack].config = this.model.tracks[this.model.activeTrack].preSerializeConfig();
+
+			//History.record(trackHistory, h);
+
+			this.model.history.history[0].song = JSON.stringify(song);
+		}
+		else
+		{
+			// record the change in the Song object
+			this.makeSnapshot({apply: false});
+		}
+	};
+
+	this.play  = function()
+	{
+		if(this.model)
+		{
+			this.model.play();
+		}
+	};
+
+	this.stop = function()
+	{
+		if(this.model)
+		{
+			this.model.stop();
+		}
+	};
+
+	this.updateBar = function(at)
+	{
+		var px = at / my.model.measureDuration * my.cellWidth;
+		my.bar.setX(px);
+		my.drawBar();
+
+		var conf = my.model.tracks[my.model.activeTrack].config;
+
+		var patternDuration = my.model.measureDuration*conf.measureCount;
+		var patternPx = (at % patternDuration) / patternDuration * my.patternView.getWidth();
+
+		my.patternView.bar.setX(patternPx);
+		my.patternView.drawBar();
+
+		
+		var patternContainer = $('#'+my.patternView.container);
+		var patternMargin = 10 * patternContainer.width() / 100;
+		var patternMaxX = patternContainer.width() + patternContainer.scrollLeft() - patternMargin;
+		
+		if(my.canAutoScrollPattern !== false)
+		{
+			if(patternPx > patternMaxX)
+			{
+				my.canAutoScrollPattern = false;
+
+				patternContainer.scrollTo({
+					top: patternContainer.scrollTop(), 
+					left: patternContainer.scrollLeft() + patternContainer.width() - patternMargin,
+				},
+				{
+					duration: 500,
+					onAfter: function(){
+						my.canAutoScrollPattern = true;
+					}
+				});
+			}
+			else if(patternPx < patternContainer.scrollLeft())
+			{
+				my.canAutoScrollPattern = false;
+
+				patternContainer.scrollTo({
+					top: patternContainer.scrollTop(), 
+					left: patternPx - patternMargin
+				},
+				{
+					duration: 500,
+					onAfter: function(){
+						my.canAutoScrollPattern = true;
+					}
+				});
+			}
+		}
 	};
 
 	this.init(options);

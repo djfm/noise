@@ -17,6 +17,7 @@ var Song = function(options)
 	my.history  = options.history || new History();
 
 	my.segments = {};
+	my.measureDuration = options.measureDuration || 4000;
 
 	my.addTrack = function()
 	{
@@ -52,6 +53,7 @@ var Song = function(options)
 			tracks: tracks,
 			activeTrack: this.activeTrack,
 			name: my.name,
+			measureDuration: my.measureDuration,
 			segments: my.segments
 		};
 
@@ -84,6 +86,22 @@ var Song = function(options)
 
 		return configs;
 	};
+
+	my.play = function()
+	{
+		for(var t in this.tracks)
+		{
+			this.tracks[t].play(this.segments[t], 0, this.measureDuration);
+		}
+	};
+
+	my.stop = function()
+	{
+		for(var t in this.tracks)
+		{
+			this.tracks[t].stop();
+		}
+	};
 };
 
 function constructify(constructor, object)
@@ -98,7 +116,7 @@ function constructify(constructor, object)
 
 function decodeAs(constructor, json)
 {
-	var object = JSON.parse(json);
+	var object = typeof(json) == 'object' ? json : JSON.parse(json);
 	return constructify(constructor, object);
 };
 

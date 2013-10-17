@@ -15,6 +15,13 @@ var History = function(){
 		{
 			this.onRecord(h);
 		}
+
+		if(this.history.length > History.maxLength)
+		{
+			this.history.pop();
+		}
+
+		return this.history[0];
 	};
 
 	this.preSerialize = function()
@@ -35,5 +42,16 @@ var History = function(){
 			h.history.push(item);
 		}
 		return h;
+	}
+};
+
+History.maxLength = 10;
+
+History.record = function(history, h)
+{
+	history.history.unshift(h);
+	if(history.history.length > History.maxLength)
+	{
+		history.history.pop();
 	}
 };

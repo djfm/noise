@@ -77,6 +77,38 @@ var PatternView = function(options)
 		this.backgroundLayer.draw();
 	};
 
+	this.initBar = function()
+	{
+
+		if(!this.barLayer)
+		{
+			this.barLayer = new Kinetic.Layer();
+			this.stage.add(this.barLayer);
+		}
+
+		if(this.bar)
+		{
+			this.bar.remove();
+		}
+
+		this.bar = new Kinetic.Rect({
+			x:0,
+			y:0,
+			width: 10,
+			height: this.getHeight(),
+			opacity: 0.5,
+			fill: 'black',
+			strokeWidth: 0
+		});
+
+		this.barLayer.add(this.bar);
+	};
+
+	this.drawBar = function()
+	{
+		this.barLayer.draw();
+	};
+
 	this.getNoteColor = function(name)
 	{
 		switch(name)
@@ -116,6 +148,9 @@ var PatternView = function(options)
 			this.addModelDataToView();
 			this.marksLayer.draw();
 		}
+
+		this.initBar();
+		this.drawBar();
 	};
 
 	this.addModelDataToView = function()
@@ -183,6 +218,11 @@ var PatternView = function(options)
 	this.setModelData = function(data)
 	{
 		my.model.notes = data;
+	};
+
+	this.postSnapshot = function(h, options)
+	{
+		this.sequencerService.patternChanged(h, options);
 	};
 
 	var my = this;

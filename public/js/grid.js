@@ -1071,7 +1071,17 @@ var Grid = function()
 				topLeftVisible: topLeftVisible,
 			};
 
-			my.model.history.record(h, options);
+			if(this.onSnapshot)
+			{
+				this.onSnapshot(h, options);
+			}
+
+			var r = my.model.history.record(h, options);
+
+			if(this.postSnapshot)
+			{
+				this.postSnapshot(r, options);
+			}
 		}
 	};
 

@@ -20,9 +20,31 @@ function SequencerController($scope, sequencer)
 		sequencer.swapTracks(on, what);
 	};
 
+	$scope.activeTrack = sequencer.activeTrack;
+
 	$scope.removeTrack = sequencer.removeTrack;
 
 	$scope.addTrack = sequencer.addTrack;
+
+	$scope.instruments = sequencer.instruments;
+
+	$scope.trackConfigChanged = sequencer.trackConfigChanged;
+
+	$scope.renameTrack = function()
+	{
+		if($scope.renamingTrack === true)
+		{
+			$scope.renamingTrack = false;
+			sequencer.trackConfigChanged();
+		}
+		else
+		{
+			$scope.renamingTrack = true;
+		}
+	};
+
+	$scope.play = sequencer.play;
+	$scope.stop = sequencer.stop;
 };
 
 $('#sequencer-view-container').scroll(function(e){
@@ -38,6 +60,7 @@ app.service('sequencer', function(){
 	var song 	= Song.deserialize((new Song()).serialize());
 
 	var service = {};
+	var playStatus = 0;
 
 	var patternView = new PatternView({
 				container: 'pattern-view-container',
@@ -111,6 +134,15 @@ app.service('sequencer', function(){
 		sequencerView.activateTrack(index);
 	};
 
+	service.activeTrack = function()
+	{
+		if(sequencerView.model)
+		{
+			return sequencerView.model.tracks[sequencerView.model.activeTrack].config;
+		}
+		else return undefined;
+	};
+
 	service.removeTrack = function(id)
 	{
 		sequencerView.removeTrack(id);
@@ -129,6 +161,45 @@ app.service('sequencer', function(){
 	service.getSong = function()
 	{
 		return sequencerView.model;
+	};
+
+	service.patternChanged = function(h, options)
+	{
+		sequencerView.patternChanged(h, options);
+	};
+
+	service.trackConfigChanged = function()
+	{
+		sequencerView.trackConfigChanged();
+	};
+
+	service.instruments = function()
+	{
+		return ["SimpleSine", "TestStrument"];
+	};
+
+	service.play = function(){
+
+		sequencerView.play();
+				
+		playStatus = 2;
+		var startedAt = (new Date()).getTime();
+		var animate   = function(){
+			if(playStatus === 0)return;
+			var at = (new Date()).getTime() - startedAt;
+			sequencerView.updateBar(at);
+			requestAnimFrame(animate);
+		}
+		requestAnimFrame(function(){
+			animate();
+		});
+
+	};
+
+	service.stop = function(){
+		playStatus = 0;
+		sequencerView.stop();
+		sequencerView.updateBar(0);
 	};
 
 	service.swapTracks = sequencerView.swapTracks;

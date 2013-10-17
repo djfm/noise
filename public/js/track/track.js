@@ -38,16 +38,15 @@ var Track = function(options)
 		}
 	};
 
-	my.play = function(startAt, measureDuration)
+	my.play = function(segments, startAt, measureDuration)
 	{	
 		my.handles = [];
 
-		var noteDuration = measureDuration/(my.beatsPerMeasure*my.notesPerBeat);
+		var noteDuration = measureDuration/(my.config.beatsPerMeasure*my.config.notesPerBeat);
 
-		for(var s in my.segments)
+		for(var s in segments)
 		{
 			var segmentTime = parseInt(s) * measureDuration;
-			
 			for(var n in my.notes)
 			{
 				var noteTime = segmentTime 
@@ -82,19 +81,31 @@ var Track = function(options)
 		}
 	};
 
+	my.stop = function()
+	{
+		for(var i in my.handles)
+		{
+			clearTimeout(my.handles[i]);
+		}
+
+		my.handles = [];
+	};
+
 	my.playSound  = function(freq, duration)
 	{
 		//console.log("Playing sound at ", freq+"Hz", "for", duration+"ms");
 
-		var instrument = new TestStrument(audioContext);
+		var instrument = new window[my.config.instrument](audioContext);
 
+		/*
 		var killNode = getKillNode(audioContext, function(kill){
 			instrument.clean();
 			kill.disconnect();
-		});
+		});*/
 
-		instrument.getOutput().connect(killNode);
-		killNode.connect(audioContext.destination);
+		instrument.getOutput().connect(audioContext.destination);
+		
+		//killNode.connect(audioContext.destination);
 
 		instrument.play(freq, duration);
 
@@ -109,7 +120,7 @@ var Track = function(options)
 		return my.config.maxOctave - my.config.minOctave + 1;
 	}
 
-	my.preSerialize = function()
+	my.preSerializeConfig = function()
 	{
 		var config = {};
 		for(var i in my.config)
@@ -119,7 +130,13 @@ var Track = function(options)
 				config[i] = my.config[i];
 			}
 		}
-		return {notes: my.notes, config: config, history: my.history.preSerialize()};
-	}
+
+		return config;
+	};
+
+	my.preSerialize = function()
+	{
+		return {notes: my.notes, config: my.preSerializeConfig(), history: my.history.preSerialize()};
+	};
 
 };

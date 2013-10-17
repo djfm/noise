@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<script src="/js/solfege.js"></script>
+		<script src="/js/components.js"></script>
+		<script src="/js/song.js"></script>
+		<script src="/js/track/track.js"></script>
+		<script src="/js/history.js"></script>
+	</head>
+	<body>
+		Playing {{song.name}}!
+
+		<script type="text/javascript">
+			var song = Song.deserialize({{{song.jsonData}}});
+			song.play();
+		</script>
+	</body>
+</html>	

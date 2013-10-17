@@ -13,7 +13,7 @@ var express    		= require('express'),
 
 var dbConf  = JSON.parse(fs.readFileSync(__dirname+'/db.json'));
 
-var schema 	= new db.Schema('mysql', {username: 'noise.fmdj.fr', password: 'hokahokapalalabaMOU', database: "noise.fmdj.fr"});
+var schema 	= new db.Schema('mysql', dbConf);
 
 var User = schema.define('User', {
 	email: 			{type: String, index: true},
@@ -99,6 +99,10 @@ app.get('/', function(req, res){
 		if(err) throw err;
 		res.send(html);
 	});
+});
+
+app.get('/synth', function(req, res){
+	res.sendfile(__dirname + '/views/instrument.html');
 });
 
 app.get('/username/available/:username', function(req, res){
@@ -235,6 +239,34 @@ app.get('/my-songs/:name', function(req, res){
 	{
 		res.send(null);
 	}
+});
+
+app.get('/:username/:song/play', function(req, res){
+	User.findOne({where: {username: req.params.username}}, function(err, user){
+		if(user)
+		{
+			Song.findOne({where: {userId: user.id, name: req.params.song}}, function(err, song){
+				if(song)
+				{
+					var params = {
+						song: song
+					};
+					cons.mustache(__dirname + '/views/play.html', params, function(err, html){
+						if(err) throw err;
+						res.send(html);
+					});
+				}
+				else
+				{
+					res.send("No such song for user: "+req.params.song);
+				}
+			});
+		}
+		else
+		{
+			res.send("No such user: "+req.params.username);
+		}
+	});
 });
 
 /*************************/
