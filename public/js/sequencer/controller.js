@@ -45,6 +45,11 @@ function SequencerController($scope, sequencer)
 
 	$scope.play = sequencer.play;
 	$scope.stop = sequencer.stop;
+
+	if(listenTo)
+	{
+		sequencer.play();
+	}
 };
 
 $('#sequencer-view-container').scroll(function(e){
@@ -57,7 +62,7 @@ $('#sequencer-view-container').scroll(function(e){
 app.service('sequencer', function(){
 	// This looks stupid, but it actually lets me see immediately when
 	// I break the Song serialization functions :)
-	var song 	= Song.deserialize((new Song()).serialize());
+	var song 	= Song.deserialize(listenTo || (new Song()).serialize());
 
 	var service = {};
 	var playStatus = 0;
@@ -175,25 +180,24 @@ app.service('sequencer', function(){
 
 	service.instruments = function()
 	{
-		return ["SimpleSine", "TestStrument"];
+		return ["SimpleSine", "TestStrument", "TripleOscillator"];
 	};
 
 	service.play = function(){
 
-		sequencerView.play();
-				
-		playStatus = 2;
-		var startedAt = (new Date()).getTime();
-		var animate   = function(){
-			if(playStatus === 0)return;
-			var at = (new Date()).getTime() - startedAt;
-			sequencerView.updateBar(at);
-			requestAnimFrame(animate);
-		}
-		requestAnimFrame(function(){
-			animate();
+		sequencerView.play(function(){
+			playStatus = 2;
+			var startedAt = (new Date()).getTime();
+			var animate   = function(){
+				if(playStatus === 0)return;
+				var at = (new Date()).getTime() - startedAt;
+				sequencerView.updateBar(at);
+				requestAnimFrame(animate);
+			}
+			requestAnimFrame(function(){
+				animate();
+			});
 		});
-
 	};
 
 	service.stop = function(){

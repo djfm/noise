@@ -183,6 +183,7 @@ var SequencerView = function(options)
 	this.setModel = function(model)
 	{
 		this.model = options.model = model;
+		this.model.sequencerView = this;
 		this.init(options);
 
 		this.activateTrack(this.model.activeTrack || 0);
@@ -354,11 +355,11 @@ var SequencerView = function(options)
 		}
 	};
 
-	this.play  = function()
+	this.play  = function(onready)
 	{
 		if(this.model)
 		{
-			this.model.play();
+			this.model.play(onready);
 		}
 	};
 

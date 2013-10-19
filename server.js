@@ -42,6 +42,33 @@ Song.belongsTo(User, {as: 'user', foreignKey: 'userId'});
 
 schema.autoupdate();
 
+/*************************/
+// Some ORM related funcs /
+/*************************/
+
+function withSong(username, songname, callback)
+{
+	User.findOne({where: {username: username}}, function(err, user){
+		if(user)
+		{
+			Song.findOne({where: {userId: user.id, name: songname}}, function(err, song){
+				if(song)
+				{
+					callback({success: true, song: song});
+				}
+				else
+				{
+					callback({success: false, message: "No such song for user."});
+				}
+			});
+		}
+		else
+		{
+			callback({success: false, message: "No such user."});
+		}
+	});
+}
+
 
 /*************************/
 //  Setup authentication  /
@@ -79,6 +106,7 @@ passport.deserializeUser(function(id, done){
 
 var app     = express();
 
+app.use(express.limit('16mb'));
 app.use(express.cookieParser());
 app.use(express.bodyParser());
 app.use(express.session({secret: '198FDBVSDLFHEGJ}}}}}MABYBZS'}));
@@ -93,11 +121,26 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res){
 	var params = {
-		username: (req.user ? req.user.username : '')
+		username: (req.user ? req.user.username : ''),
+		listenTo: 'null'
 	};
 	cons.mustache(__dirname + '/views/index.html', params, function(err, html){
 		if(err) throw err;
 		res.send(html);
+	});
+});
+
+app.get('/:user/:song/listen', function(req, res){
+
+	withSong(req.params.user, req.params.song, function(maybeSong){
+		var params = {
+			username: (req.user ? req.user.username : ''),
+			listenTo: (maybeSong.success ? maybeSong.song.jsonData : 'null')
+		};
+		cons.mustache(__dirname + '/views/index.html', params, function(err, html){
+			if(err) throw err;
+			res.send(html);
+		});
 	});
 });
 

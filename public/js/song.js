@@ -87,8 +87,18 @@ var Song = function(options)
 		return configs;
 	};
 
-	my.play = function()
+	my.play = function(onready)
 	{
+		for(var t in this.tracks)
+		{
+			this.tracks[t].prepare(this.segments[t], 0, this.measureDuration);
+		}
+
+		if(onready)
+		{
+			onready();
+		}
+		
 		for(var t in this.tracks)
 		{
 			this.tracks[t].play(this.segments[t], 0, this.measureDuration);

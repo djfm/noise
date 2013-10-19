@@ -7,7 +7,7 @@ var Track = function(options)
 	my.config.name = options.name;
 	my.config.measureCount = options.measureCount || 4;
 	my.config.beatsPerMeasure = options.beatsPerMeasure || 4;
-	my.config.notesPerBeat = options.notesPerBeat || 4;
+	my.config.notesPerBeat = options.notesPerBeat || 8;
 	my.config.maxOctave = options.maxOctave || 8;
 	my.config.minOctave = options.minOctave || 0;
 
@@ -38,8 +38,68 @@ var Track = function(options)
 		}
 	};
 
+	my.prepare = function(segments, startAt, measureDuration)
+	{
+		my.forEachNote(segments, startAt, measureDuration, function(freq, msDuration, msWhen){
+			if(window[my.config.instrument].prepare)
+			{
+				window[my.config.instrument].prepare(audioContext, freq, msDuration, msWhen);
+			}
+		});
+	};
+
 	my.play = function(segments, startAt, measureDuration)
+	{
+		my.handles = [];
+		my.forEachNote(segments, startAt, measureDuration, function(freq, msDuration, msWhen){
+			var play   = (function(freq, msDuration){
+				return function(){
+					my.playSound(freq, msDuration);
+				};
+			})(freq, msDuration);
+
+			var handle = setTimeout(play, msWhen);
+			my.handles.push(handle);
+		});
+	};
+
+	my.forEachNote = function(segments, startAt, measureDuration, callback)
 	{	
+
+		var noteDuration = measureDuration/(my.config.beatsPerMeasure*my.config.notesPerBeat);
+
+		for(var s in segments)
+		{
+			var segmentTime = parseInt(s) * measureDuration;
+			for(var n in my.notes)
+			{
+				var noteTime = segmentTime 
+					+ parseInt(n) * noteDuration;
+
+				if(noteTime >= startAt)
+				{
+					for(var h in my.notes[n])
+					{
+						var semitone = parseInt(h);
+						var durationInNotes = my.notes[n][h];
+
+						var duration = durationInNotes * noteDuration;
+
+						var offset = semitone % 12;
+						var octave = (semitone - offset) / 12;
+						var freq   = NoteFreqs[NoteNames[offset]] * Math.pow(2, octave);
+
+						callback(freq, duration, noteTime);
+					}
+				}
+			}
+		}
+	};
+
+	my.play_test = function(segments, startAt, measureDuration)
+	{	
+		var t0 = audioContext.currentTime;
+		console.log(t0);
 		my.handles = [];
 
 		var noteDuration = measureDuration/(my.config.beatsPerMeasure*my.config.notesPerBeat);
@@ -65,16 +125,9 @@ var Track = function(options)
 						var octave = (semitone - offset) / 12;
 						var freq   = NoteFreqs[NoteNames[offset]] * Math.pow(2, octave);
 
-						//console.log("Queuing freq", freq+"Hz at", noteTime+'ms', "for", duration+'ms');
-						
-						var play   = (function(freq, duration){
-							return function(){
-								my.playSound(freq, duration);
-							};
-						})(freq, duration);
-
-						var handle = setTimeout(play, noteTime);
-						my.handles.push(handle);
+						var instrument = new window[my.config.instrument](audioContext);
+						instrument.getOutput().connect(audioContext.destination);		
+						instrument.play(freq, duration, 1000 * t0 + noteTime);
 					}
 				}
 			}
@@ -93,26 +146,16 @@ var Track = function(options)
 
 	my.playSound  = function(freq, duration)
 	{
-		//console.log("Playing sound at ", freq+"Hz", "for", duration+"ms");
 
 		var instrument = new window[my.config.instrument](audioContext);
 
-		/*
-		var killNode = getKillNode(audioContext, function(kill){
-			instrument.clean();
-			kill.disconnect();
-		});*/
-
-		instrument.getOutput().connect(audioContext.destination);
-		
-		//killNode.connect(audioContext.destination);
+		instrument.getOutput().connect(audioContext.destination);		
 
 		instrument.play(freq, duration);
 
 		setTimeout(function(){
 			instrument.stop();
 		}, duration);
-
 	};
 
 	my.octaveCount = function()

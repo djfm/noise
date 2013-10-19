@@ -123,9 +123,9 @@ var PatternView = function(options)
 	this.setModel = function(model)
 	{
 		var needToRedrawGrid = !this.model
-			||	model.notesPerBeat != this.model.notesPerBeat
-			|| 	model.beatsPerMeasure != this.model.beatsPerMeasure
-			|| 	model.measureCount != this.model.measureCount;
+			||	model.config.notesPerBeat != this.model.config.notesPerBeat
+			|| 	model.config.beatsPerMeasure != this.model.config.beatsPerMeasure
+			|| 	model.config.measureCount != this.model.config.measureCount;
 
 		this.model = options.model = model;
 
@@ -141,12 +141,13 @@ var PatternView = function(options)
 		else
 		{
 			this.removeAllMarks();
-			if(needToRedrawGrid)
-			{
-				this.drawGrid();
-			}
 			this.addModelDataToView();
 			this.marksLayer.draw();
+		}
+
+		if(needToRedrawGrid)
+		{
+			this.drawGrid();
 		}
 
 		this.initBar();
