@@ -180,7 +180,7 @@ app.service('sequencer', function(){
 
 	service.instruments = function()
 	{
-		return ["SimpleSine", "TestStrument", "TripleOscillator"];
+		return ["SimpleSine", "TestStrument", "TripleOscillator", "TOSC::Test"];
 	};
 
 	service.play = function(){

@@ -185,6 +185,11 @@ var TestStrument = function(audioContext)
 
 var WaveShape = {};
 
+WaveShape.sine = function(fraction)
+{
+	return Math.sin(2*Math.PI*fraction);
+}
+
 WaveShape.moogSaw = function(fraction)
 {
 	if(fraction < 0.5)
@@ -197,7 +202,7 @@ WaveShape.moogSaw = function(fraction)
 	}
 };
 
-WaveShape.saw = function(fraction)
+WaveShape.sawtooth = function(fraction)
 {
 	return -1 + 2*fraction;
 };
@@ -217,6 +222,21 @@ WaveShape.triangle = function(fraction)
 		return fraction * 4 - 4;
 	}
 };
+
+WaveShape.square = function(fraction)
+{
+	return fraction > 0.5 ? -1 : 1;
+};
+
+WaveShape.exponential = function(fraction)
+{
+	return fraction > 0.5 ? 1 - fraction : -1+8*fraction*fraction;
+};
+
+WaveShape.white = function(fraction)
+{
+	return Math.random();
+}
 
 var TripleOscillator = function(audioContext)
 {
@@ -270,7 +290,7 @@ TripleOscillator.prepare = function(audioContext, freq, msDuration, msWhen)
 			FR: 4,
 		},
 		{
-			waveShape: 'saw',
+			waveShape: 'sawtooth',
 			Vol: 0.33,
 			Crs: 0,
 			FL: 2,
@@ -330,4 +350,239 @@ TripleOscillator.prepare = function(audioContext, freq, msDuration, msWhen)
 
 	TripleOscillator.buffers[freq][msDuration] = buffer;
 
+};
+
+
+
+var TOSC = function()
+{
+
+};
+
+TOSC.getPreset = function(name)
+{
+	var preset = TOSC.presets[name];
+	
+	var instrument = function()
+	{
+		var source = audioContext.createBufferSource();
+
+		var gain = audioContext.createGain();
+		gain.gain.value = 0.2;
+
+		source.connect(gain);
+
+		this.play = function(freq, duration)
+		{
+			source.buffer = TOSC.buffers[preset][freq][duration];
+			source.start(0);
+		};
+
+		this.getOutput = function()
+		{
+			return gain;
+		};
+
+		this.stop = function()
+		{
+
+		};
+	};
+
+	instrument.prepare = function(audioContext, freq, msDuration, msWhen)
+	{
+		TOSC.prepare(audioContext, preset, freq, msDuration, msWhen);
+	};
+
+	return instrument;
+};
+
+TOSC.buffers = {};
+
+TOSC.prepare = function(audioContext, preset, freq, msDuration, msWhen)
+{
+	if(!TOSC.buffers[preset])TOSC.buffers[preset] = {};
+	if(!TOSC.buffers[preset][freq])TOSC.buffers[preset][freq] = {};
+	if(TOSC.buffers[preset][freq][msDuration])return;
+
+	var buffer = audioContext.createBuffer(2, (msDuration)/1000*audioContext.sampleRate ,audioContext.sampleRate);
+
+	function detune(freq, coarse, fine)
+	{
+		return freq * Math.pow(2, (coarse*100+fine)/1200);
+	};
+
+	function fraction(phi)
+	{
+		return phi - Math.floor(phi);
+	};
+
+	function absFraction(phi)
+	{
+		return (phi - (phi >= 0 ? Math.floor(phi) : Math.floor(phi) - 1));
+	};
+
+	var oscs = [];
+
+	function pan(channel, panning, volume)
+	{
+		if(channel === 0)
+		{
+			return volume * (1-panning);
+		}
+		else
+		{
+			return volume * (1+panning);
+		}
+	};
+
+	for(var o in preset.oscs)
+	{
+		oscs[o] 	= [];
+
+		oscs[o][0] 	= {
+			coeff: detune(freq, preset.oscs[o].Crs, preset.oscs[o].FL) / audioContext.sampleRate,
+			vol: pan(0, (preset.oscs[o].Pan || 0), preset.oscs[o].Vol),
+			getSample: function(phase){
+				return WaveShape[preset.oscs[o].waveShape](fraction(phase));
+			}
+		};
+		oscs[o][1] 	= {
+			coeff: detune(freq, preset.oscs[o].Crs, preset.oscs[o].FR) / audioContext.sampleRate,
+			vol: pan(1, (preset.oscs[o].Pan || 0), preset.oscs[o].Vol),
+			getSample: function(phase){
+				return WaveShape[preset.oscs[o].waveShape](fraction(phase));
+			}
+		};
+
+		var PO  = preset.oscs[o].PO  || 0;
+		var SPD = preset.oscs[o].SPD || 0;
+
+		oscs[o][0].phase_offset = (PO + SPD)/360;
+		oscs[o][1].phase_offset = PO/360;
+
+		oscs[o][0].phase = oscs[o][0].phase_offset;
+		oscs[o][1].phase = oscs[o][1].phase_offset;
+	}
+
+	var data = [buffer.getChannelData(0), buffer.getChannelData(1)];
+
+	for(var i=0; i<buffer.length; i++)
+	{
+		var sample = [0,0];
+
+
+		for(o=oscs.length-1; o>=0; o--)
+		{
+			if(o === oscs.length - 1)
+			{
+				for(var c in sample)
+				{
+					sample[c] = oscs[o][c].vol * oscs[o][c].getSample(oscs[o][c].phase);
+					oscs[o][c].phase += oscs[o][c].coeff;
+				}
+			}
+			else if(preset.oscs[o].mod === 'Mix')
+			{
+				for(var c in sample)
+				{
+					sample[c] += oscs[o][c].vol * oscs[o][c].getSample(oscs[o][c].phase);
+					oscs[o][c].phase += oscs[o][c].coeff;
+				}
+			}
+			else if(preset.oscs[o].mod === 'AM')
+			{
+				for(var c in sample)
+				{
+					sample[c] *= oscs[o][c].vol * oscs[o][c].getSample(oscs[o][c].phase);
+					oscs[o][c].phase += oscs[o][c].coeff;
+				}
+			}
+			else if(preset.oscs[o].mod === 'PM')
+			{
+				for(var c in sample)
+				{
+					sample[c] = oscs[o][c].vol * oscs[o][c].getSample(absFraction(sample[c] + oscs[o][c].phase));
+					oscs[o][c].phase += oscs[o][c].coeff;
+				}
+			}
+			else if(preset.oscs[o].mod === 'FM')
+			{
+				for(var c in sample)
+				{
+					oscs[o][c].phase += sample[c];
+					sample[c] = oscs[o][c].vol * oscs[o][c].getSample(oscs[o][c].phase);
+					oscs[o][c].phase += oscs[o][c].coeff;
+				}
+			}
+			else if(preset.oscs[o].mod === 'Sync')
+			{
+				for(var c in sample)
+				{
+					var sub_osc_coeff = oscs[o+1][c].coeff;
+					var coeff 		  = oscs[o][c].coeff;
+
+					var sync_ok = Math.floor(oscs[o+1][c].phase + oscs[o+1][c].coeff) > Math.floor(oscs[o+1][c].phase);
+
+					if(sync_ok)
+					{
+						oscs[o][c].phase = oscs[o][c].phase_offset;
+					}
+
+					sample[c] = oscs[o][c].vol * oscs[o][c].getSample(oscs[o][c].phase);
+					oscs[o][c].phase += coeff;
+				}
+			}
+		}
+
+		for(var c in sample)
+		{
+			data[c][i] = 4*sample[c];
+		}
+	}
+
+	TOSC.buffers[preset][freq][msDuration] = buffer;
+
+};
+
+TOSC.presets = {
+	Test:{
+		oscs: [
+			{
+				waveShape: 'moogSaw',
+				Vol: 0.33,
+				Crs: 0,
+				FL: -4,
+				FR: 10,
+				mod: 'PM'
+			},
+			{
+				waveShape: 'triangle',
+				Vol: 0.33,
+				Crs: 0,
+				FL: 2,
+				FR: 4,
+				mod: 'Mix'
+			},
+			{
+				waveShape: 'sawtooth',
+				Vol: 0.33,
+				Crs: 0,
+				FL: 2,
+				FR: 4,
+			}
+		]
+	}
+};
+
+function getInstrument(name)
+{
+	var path = name.split("::");
+	var klass = window[path[0]];
+
+	if(path.length === 2)
+	{
+		return klass.getPreset(path[1]);
+	}
+	else return klass;
 };
